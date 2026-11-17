@@ -1,0 +1,91 @@
+# Owner: Vượng (stanza `benchmark`: Phúc, qua PR có Vượng review)
+# Pin image tag/digest ở Task 3, ghi vào REPORT.md (kèm ngày đọc docs).
+name: c5-cache-stampede
+
+x-app: &app
+  build: ./app
+  environment: &app-env
+    PORT: "${APP_PORT:-3000}"
+    REDIS_URL: redis://redis:6379
+    DATABASE_URL: postgres://app_user:app_pass@postgres:5432/shop
+    CACHE_TTL_MS: "${CACHE_TTL_MS:-3000}"
+    PG_POOL_MAX: "${PG_POOL_MAX:-10}"
+    LOCK_LEASE_MS: "${LOCK_LEASE_MS:-5000}"
+    WAIT_POLL_MS: "${WAIT_POLL_MS:-5}"
+    WAIT_TIMEOUT_MS: "${WAIT_TIMEOUT_MS:-2000}"
+    GIT_COMMIT: "${GIT_COMMIT:-unknown}"
+  depends_on:
+    redis:
+      condition: service_healthy
+    postgres:
+      condition: service_healthy
+  cpus: "${APP_CPUS:-1}"   # [calibrate]
+
+services:
+  postgres:
+    image: postgres:16
+    command:
+      - postgres
+      - -c
+      - shared_preload_libraries=pg_stat_statements
+      - -c
+      - pg_stat_statements.track=all
+    environment:
+      POSTGRES_DB: shop
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      SEED_REVIEWS: "${SEED_REVIEWS:-800000}"
+    volumes:
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d shop"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    cpus: "${PG_CPUS:-2}"   # [calibrate]
+
+  redis:
+    image: redis:7
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    cpus: "${REDIS_CPUS:-1}"   # [calibrate]
+
+  app1:
+    <<: *app
+    environment:
+      <<: *app-env
+      PORT: "3001"
+      INSTANCE_NAME: app1
+    ports: ["3001:3001"]
+
+  app2:
+    <<: *app
+    environment:
+      <<: *app-env
+      PORT: "3002"
+      INSTANCE_NAME: app2
+    ports: ["3002:3002"]
+
+  benchmark:
+    profiles: ["bench"]
+    build: ./benchmark
+    environment:
+      APP_URLS: http://app1:3001,http://app2:3002
+      REDIS_URL: redis://redis:6379
+      STATS_DATABASE_URL: postgres://bench_ro:bench_pass@postgres:5432/shop
+      PAIRS: "${PAIRS:-10}"
+      BURST_SIZE: "${BURST_SIZE:-200}"
+      RESULTS_DIR: /results
+      RESULTS_KIND: "${RESULTS_KIND:-pilot}"   # pilot | official
+      ORDER_SEED: "${ORDER_SEED:-20261117}"
+    volumes:
+      - ./results:/results
+    depends_on:
+      app1:
+        condition: service_healthy
+      app2:
+        condition: service_healthy
+    cpus: "${BENCH_CPUS:-1}"   # [calibrate]
