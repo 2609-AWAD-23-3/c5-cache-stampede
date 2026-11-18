@@ -67,7 +67,7 @@ Xong khi: checklist #9–14 có evidence; fresh clone chạy được trên máy
 ## Task 4: Runner đo — Phúc — M2 22/11
 
 - `benchmark/` theo `CONTRACT.md` mục 6–8: kiểm `/healthz` và `/config`, warm-up, chờ expiry thật, snapshot `pg_stat_statements`, burst 200 qua hai instance (keep-alive, monotonic clock), ghi `requests.jsonl`, `summary.json`, validity, thứ tự cặp xen kẽ.
-- Một command: `docker compose run --rm benchmark`.
+- Một command: `docker compose run --rm benchmark`; cuối lệnh gọi `benchmark/src/aggregate.js` (Task 6) để in bảng số liệu.
 - Phát triển song song bằng stub service, không chờ Task 2.
 
 Xong khi: chạy được một cặp từ fresh clone, log đủ field, lượt invalid giữ log kèm `invalid_reasons`; PR có Vỹ review.
@@ -82,7 +82,7 @@ Xong khi: checklist đủ evidence; `results/official/` có mọi lượt kể c
 
 ## Task 6: Aggregate và phân tích kết quả — Vỹ — M3 25/11
 
-- Viết bộ tổng hợp: `summary.csv`, `report_table.md`, p95 nearest-rank, `delta_p95_ms` theo cặp, median và min–max.
+- Viết `benchmark/src/aggregate.js`: đọc `results/<kind>/` (`pilot` hoặc `official`), ghi `summary.csv` và `report_table.md` cùng thư mục đó theo `CONTRACT.md` mục 7; p95 nearest-rank, `delta_p95_ms` theo cặp, median và min–max.
 - Phân tích nguyên nhân từ log: pool wait, lock wait, số `miss-fallback`; báo cáo đúng dấu của delta.
 - Mọi số trong report truy được về dòng trong log.
 
