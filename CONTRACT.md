@@ -1,4 +1,4 @@
-# CONTRACT — service ↔ runner (v1.2, 18/11/2026)
+# CONTRACT — service ↔ runner (v1.3, 18/11/2026)
 
 File này là nguồn sự thật duy nhất giữa `app/` (Vượng) và `benchmark/` (Phúc). Muốn đổi bất kỳ điều gì: sửa file này trong một PR, cả hai người cùng approve, tăng version ở dòng đầu. Vỹ giữ file.
 
@@ -6,7 +6,7 @@ Câu hỏi nghiên cứu (không sửa chữ):
 
 > When a hot cache key expires under 200 concurrent requests, how many Postgres queries does request coalescing with a Redis lock save compared with plain cache-aside (queries per expiry), and how much does it add to p95 latency (ms)?
 
-Giá trị đánh dấu `[calibrate]` được hiệu chỉnh trong pilot (19–22/11), rồi **đóng băng** trước khi chạy official và ghi vào `REPORT.md`.
+Giá trị đánh dấu `[calibrate]` được hiệu chỉnh trong pilot (19–21/11), rồi **đóng băng** trước khi chạy official và ghi vào `REPORT.md`.
 
 ---
 
@@ -210,7 +210,7 @@ Phân việc: runner (Task 4) chỉ ghi file của từng lượt như trên, r�
 
 Quy ước: p95 = nearest-rank trên các request status 200. Thời gian ms, `delta_p95_ms = p95_coalesced − p95_plain` (âm nghĩa là p95 giảm). Giá trị `median của p95 từng lượt` và `median của chênh lệch từng cặp` được đặt tên riêng, không gộp.
 
-## 8. Lượt không hợp lệ (đóng băng trước 23/11)
+## 8. Lượt không hợp lệ (đóng băng trước 22/11)
 
 Lượt `valid=false` chỉ khi **phép đo hỏng**, tức bất kỳ điều kiện nào:
 
@@ -237,3 +237,4 @@ Xem bảng checklist trong `docs/PILOT-CHECKLIST.md`. Contract coi là "đạt" 
 | 1.0 | 17/11/2026 | Bản đầu, theo quyết định D1–D12. |
 | 1.1 | 17/11/2026 | Theo review của Codex: (1) `/config` tách metadata (`instance`, `port`) khỏi `params` cần khớp; (2) fallback và query lặp ở coalesced giữ trong median chính, không còn là lý do loại lượt; (3) bỏ ngưỡng "plain gần 200 query". `SEED_REVIEWS` = 800000 sau khi đo query 34–40 ms. |
 | 1.2 | 18/11/2026 | Theo đề xuất của Phúc ở issue #1: `summary.csv` và `report_table.md` được ghi vào `results/<kind>/` (pilot và official), không chỉ `results/official/`; làm rõ runner (Task 4) ghi dữ liệu từng lượt và gọi aggregate (Task 6) ở cuối lệnh. |
+| 1.3 | 18/11/2026 | Rút lịch: bản final xong 25/11 (hạn nộp chính thức 29/11 là dự phòng); pilot 19–21/11, đóng băng trước 22/11, official 22/11. Không đổi API, định dạng log hay quy tắc đo. |

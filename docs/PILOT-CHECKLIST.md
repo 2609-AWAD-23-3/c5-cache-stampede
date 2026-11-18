@@ -1,4 +1,4 @@
-# Pilot checklist (19–22/11)
+# Pilot checklist (19–21/11)
 
 Điền kết quả và đường dẫn tới `results/pilot/<run_id>/` cho mỗi dòng. Chỉ khi tất cả pass mới đóng băng các giá trị `[calibrate]` và chạy official.
 
