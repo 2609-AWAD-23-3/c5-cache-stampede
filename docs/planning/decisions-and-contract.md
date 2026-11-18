@@ -1,5 +1,7 @@
 # C5 — Quyết định đã chốt và contract kỹ thuật (v1, 17/11/2026)
 
+> **Lịch và số cặp trong file này đã được thay bằng `CONTRACT.md` v1.3 và `docs/ISSUES.md` v5.**
+
 > **Đã được thay thế một phần bởi `CONTRACT.md` v1.1.** Khác biệt: lượt coalesced có fallback hoặc `queries > 1` vẫn nằm trong median chính (mục 4 dưới đây ghi ngược lại); không có ngưỡng "plain gần 200 query" trong pilot (mục 5); `/config` chỉ so sánh `params`, `node_version`, `git_commit`; `SEED_REVIEWS` = 800000. Khi mâu thuẫn, `CONTRACT.md` thắng.
 
 Nguồn quyết định: review lần 1 của Claude, được nhóm chấp nhận nguyên đề xuất. Mọi số cụ thể dưới đây là **giá trị khởi đầu**. Giá trị nào có đánh dấu `[calibrate]` được hiệu chỉnh trong pilot (19–22/11), sau đó đóng băng và ghi vào `REPORT.md`. Sau khi bắt đầu 10 cặp chính thức thì không đổi nữa.

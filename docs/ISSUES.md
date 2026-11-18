@@ -11,7 +11,7 @@
 | M5 Final | 25/11 | bản final: AI-LOG, tự chấm, ZIP đã kiểm và **nộp ngày 25/11**; hạn chính thức 29/11 22:00 chỉ dự phòng khi có sự cố nộp |
 | M6 Red team | 02/12 22:00 | issue red team |
 
-Nếu trễ, cắt theo thứ tự: sensitivity poll 1/20 ms, mức tải 20 request, máy thứ hai, 10 cặp xuống 6 cặp (không dưới 5).
+Nếu trễ, cắt theo thứ tự: sensitivity poll 1/20 ms, mức tải 20 request, máy thứ hai, 10 cặp xuống 6 cặp (không dưới 5; quy tắc ở `CONTRACT.md` mục 6).
 
 ## Bảng tổng
 
@@ -60,11 +60,11 @@ Xong khi: payload hai mode khớp hash; cache hit cho `X-DB-Queries=0`; một re
 
 ## Task 3: Hạ tầng, calibrate và test lock — Vượng — M2 20/11 (test lock xong trước pilot 21/11)
 
-- Rà `compose.yaml`, seed; calibrate `SEED_REVIEWS` và `cpus` trên máy chuẩn; ghi số đo.
+- Rà `compose.yaml`, seed; calibrate hạ tầng (`SEED_REVIEWS`, `cpus`) trên máy chuẩn xong 20/11; ghi số đo. Các giá trị `[calibrate]` khác (`CACHE_TTL_MS`, lease, poll…) chốt trong pilot 20–21/11.
 - Test lock chủ ý (checklist #10–14): recheck, thứ tự ghi cache trước nhả lock, lease ngắn hơn query, giết holder, waiter timeout. Mỗi case có log.
 - Chạy fresh clone trên máy Vượng, làm đúng README, `PAIRS=1`.
 
-Xong khi: checklist #9–14 có evidence; fresh clone chạy được trên máy thứ hai.
+Xong khi: checklist #9–14 có evidence; fresh clone chạy được trên máy thứ hai. Nếu đã cắt "máy thứ hai" thì chỉ cần fresh clone trên máy chuẩn.
 
 ## Task 4: Runner đo — Phúc — M2 20/11
 
@@ -90,9 +90,10 @@ Xong khi: checklist đủ evidence; `results/official/` có mọi lượt kể c
 
 Xong khi: tính lại độc lập được các con số chính từ `requests.jsonl`.
 
-## Task 7: Review chéo, kiểm nguồn và fresh clone — Vỹ — M3 22/11
+## Task 7: Review chéo, kiểm nguồn và fresh clone — Vỹ — review PR xong trước 21/11, phần còn lại 22/11
 
-- Review PR của Task 2, 3, 4 theo mẫu bàn giao trong `context.md`; gửi Claude review khi cần.
+- Review PR của Task 2, 3, 4 theo mẫu bàn giao trong `context.md`; gửi Claude review khi cần. **Xong trước khi đóng băng (≤ 21/11)** để lỗi service/runner không buộc chạy lại official.
+- Phần dưới đây giữ hạn 22/11:
 - Kiểm official docs và release notes (Redis, Postgres, Docker, Node): version, ngày đọc cho mục "Nguồn".
 - Fresh clone lần cuối trên máy Vỹ sau khi đóng băng.
 

@@ -180,6 +180,8 @@ Giới hạn tài nguyên (`cpus`) cho từng container nằm trong `compose.yam
 
 Thứ tự lượt: 10 cặp xen kẽ (5 cặp `plain→coalesced`, 5 cặp `coalesced→plain`), xáo thứ tự bằng seed ghi trong config.
 
+**Phương án dự phòng 6 cặp:** chỉ dùng khi thiếu thời gian, quyết định chậm nhất 21/11 (trước khi chạy official), do Vỹ chốt sau khi hỏi Vượng và Phúc ở issue Task 5. Khi đó chạy 6 cặp (3 `plain→coalesced`, 3 `coalesced→plain`), vẫn xáo bằng seed, **không dưới 5 cặp**. Số cặp thực tế ghi trong `config.json` và REPORT, và REPORT nêu rõ là đã cắt.
+
 ## 7. Định dạng log
 
 Thư mục mỗi lượt: `results/<pilot|official>/<run_id>/` với `run_id = YYYYMMDDTHHMMSSZ-<mode>-<pair>`.
@@ -237,4 +239,4 @@ Xem bảng checklist trong `docs/PILOT-CHECKLIST.md`. Contract coi là "đạt" 
 | 1.0 | 17/11/2026 | Bản đầu, theo quyết định D1–D12. |
 | 1.1 | 17/11/2026 | Theo review của Codex: (1) `/config` tách metadata (`instance`, `port`) khỏi `params` cần khớp; (2) fallback và query lặp ở coalesced giữ trong median chính, không còn là lý do loại lượt; (3) bỏ ngưỡng "plain gần 200 query". `SEED_REVIEWS` = 800000 sau khi đo query 34–40 ms. |
 | 1.2 | 18/11/2026 | Theo đề xuất của Phúc ở issue #1: `summary.csv` và `report_table.md` được ghi vào `results/<kind>/` (pilot và official), không chỉ `results/official/`; làm rõ runner (Task 4) ghi dữ liệu từng lượt và gọi aggregate (Task 6) ở cuối lệnh. |
-| 1.3 | 18/11/2026 | Rút lịch: bản final xong 25/11 (hạn nộp chính thức 29/11 là dự phòng); pilot 19–21/11, đóng băng trước 22/11, official 22/11. Không đổi API, định dạng log hay quy tắc đo. |
+| 1.3 | 18/11/2026 | Rút lịch: bản final xong 25/11 (hạn nộp chính thức 29/11 là dự phòng); pilot 19–21/11, đóng băng trước 22/11, official 22/11. Thêm phương án dự phòng 6 cặp ở mục 6 (theo review của Vượng). Không đổi API, định dạng log hay quy tắc đo. |

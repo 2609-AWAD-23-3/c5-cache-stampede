@@ -1,3 +1,5 @@
+> **Lịch và số cặp trong file này đã được thay bằng `CONTRACT.md` v1.3 và `docs/ISSUES.md` v5.**
+
 > Tài liệu lập kế hoạch lưu trữ (17/11/2026), do Codex soạn. Các link tới PDF đề và bản dịch trỏ thư mục `seminar/` trên máy cục bộ, không có trong repo. Khi mâu thuẫn, `CONTRACT.md` và `docs/ISSUES.md` thắng.
 
 # Context cho Claude review Seminar C5
