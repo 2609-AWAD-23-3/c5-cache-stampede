@@ -1,4 +1,4 @@
-# CONTRACT — service ↔ runner (v1.1, 17/11/2026)
+# CONTRACT — service ↔ runner (v1.2, 18/11/2026)
 
 File này là nguồn sự thật duy nhất giữa `app/` (Vượng) và `benchmark/` (Phúc). Muốn đổi bất kỳ điều gì: sửa file này trong một PR, cả hai người cùng approve, tăng version ở dòng đầu. Vỹ giữ file.
 
@@ -199,7 +199,14 @@ Mỗi dòng `requests.jsonl`:
 
 `summary.json` tối thiểu: `mode, pair, run_id, queries_per_expiry, sum_db_queries_from_headers, p95_ms, p50_ms, max_ms, n_ok, n_error, burst_span_ms, hit_count, miss_query_count, miss_wait_count, miss_fallback_count, valid (bool), invalid_reasons (list)`.
 
-Tổng hợp cuối: `results/official/summary.csv` (một dòng mỗi lượt) và `results/official/report_table.md` (bảng dùng trong `REPORT.md`). Mọi con số trong report/slides phải truy được về dòng trong các file này.
+Tổng hợp cuối (Task 6): bộ aggregate `benchmark/src/aggregate.js` nhận thư mục `results/<kind>/` (`kind` = `pilot` hoặc `official`, theo `RESULTS_KIND`), đọc mọi `<run_id>/` bên trong và ghi hai file **cùng thư mục đó**:
+
+| File | Nội dung |
+| --- | --- |
+| `results/<kind>/summary.csv` | một dòng mỗi lượt, gồm cả lượt `valid=false` (cột `valid`, `invalid_reasons`) |
+| `results/<kind>/report_table.md` | bảng dùng trong `REPORT.md`: p95 từng mode, `delta_p95_ms` theo cặp, median và min–max, số `miss-fallback` |
+
+Phân việc: runner (Task 4) chỉ ghi file của từng lượt như trên, rồi gọi aggregate ở cuối lệnh `docker compose run --rm benchmark` để in bảng ra màn hình; aggregate (Task 6) không chạy benchmark. Mọi con số trong report/slides phải truy được về dòng trong các file này.
 
 Quy ước: p95 = nearest-rank trên các request status 200. Thời gian ms, `delta_p95_ms = p95_coalesced − p95_plain` (âm nghĩa là p95 giảm). Giá trị `median của p95 từng lượt` và `median của chênh lệch từng cặp` được đặt tên riêng, không gộp.
 
@@ -229,3 +236,4 @@ Xem bảng checklist trong `docs/PILOT-CHECKLIST.md`. Contract coi là "đạt" 
 | --- | --- | --- |
 | 1.0 | 17/11/2026 | Bản đầu, theo quyết định D1–D12. |
 | 1.1 | 17/11/2026 | Theo review của Codex: (1) `/config` tách metadata (`instance`, `port`) khỏi `params` cần khớp; (2) fallback và query lặp ở coalesced giữ trong median chính, không còn là lý do loại lượt; (3) bỏ ngưỡng "plain gần 200 query". `SEED_REVIEWS` = 800000 sau khi đo query 34–40 ms. |
+| 1.2 | 18/11/2026 | Theo đề xuất của Phúc ở issue #1: `summary.csv` và `report_table.md` được ghi vào `results/<kind>/` (pilot và official), không chỉ `results/official/`; làm rõ runner (Task 4) ghi dữ liệu từng lượt và gọi aggregate (Task 6) ở cuối lệnh. |
