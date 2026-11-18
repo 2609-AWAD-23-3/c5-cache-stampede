@@ -1,15 +1,17 @@
-# Issue board C5 (v4, 17/11/2026)
+# Issue board C5 (v5, 18/11/2026)
 
 12 issue (Task 0 đã xong). Mỗi mục là một GitHub issue: assignee, milestone. **Quy ước:** title của issue và PR viết bằng tiếng Anh (cột "Title" bên dưới); description và nội dung viết bằng tiếng Việt cho dễ đọc. Việc nhỏ (review, README, AI-LOG…) nằm trong checklist của task lớn, không tách issue riêng.
 
 | Mốc | Hạn | Nội dung |
 | --- | --- | --- |
-| M1 | 18/11 | repo public, contract được cả ba xác nhận |
-| M2 | 22/11 | service, runner, pilot đủ evidence |
-| M3 | 25/11 | đóng băng cấu hình, chạy official |
-| M4 | 28/11 | report, slides, video, tự chấm |
-| M5 | 29/11 22:00 | nộp ZIP |
-| M6 | 02/12 22:00 | issue red team |
+| M1 Contract | 18/11 | repo public, contract được cả ba xác nhận |
+| M2 Code | 20/11 | service, runner, aggregate chạy được; hạ tầng và calibrate xong |
+| M3 Official | 22/11 | pilot 21/11, đóng băng cấu hình 21/11, official 22/11 |
+| M4 Docs | 24/11 | REPORT, README, slides, video |
+| M5 Final | 25/11 | bản final: AI-LOG, tự chấm, ZIP đã kiểm và **nộp ngày 25/11**; hạn chính thức 29/11 22:00 chỉ dự phòng khi có sự cố nộp |
+| M6 Red team | 02/12 22:00 | issue red team |
+
+Nếu trễ, cắt theo thứ tự: sensitivity poll 1/20 ms, mức tải 20 request, máy thứ hai, 10 cặp xuống 6 cặp (không dưới 5; quy tắc ở `CONTRACT.md` mục 6).
 
 ## Bảng tổng
 
@@ -21,8 +23,8 @@
 | 3 | Task 3: Infrastructure, calibration and lock tests | Hạ tầng, calibrate và test lock | Vượng | M2 | 2 |
 | 4 | Task 4: Benchmark runner | Runner đo | Phúc | M2 | 1 |
 | 5 | Task 5: Pilot, freeze and official runs | Pilot, đóng băng và chạy official | Phúc | M3 | 2, 3, 4 |
-| 6 | Task 6: Aggregation and result analysis | Aggregate và phân tích kết quả | Vỹ | M3 | 4, 5 |
-| 7 | Task 7: Cross-review, source verification and fresh clone | Review chéo, kiểm nguồn và fresh clone | Vỹ | M2–M3 | 2, 3, 4 |
+| 6 | Task 6: Aggregation and result analysis | Aggregate và phân tích kết quả | Vỹ | M2 (aggregate), M4 (phân tích) | 4, 5 |
+| 7 | Task 7: Cross-review, source verification and fresh clone | Review chéo, kiểm nguồn và fresh clone | Vỹ | M3 | 2, 3, 4 |
 | 8 | Task 8: REPORT and README | REPORT và README | Vỹ (Vượng và Phúc viết phần của mình) | M4 | 5, 6 |
 | 9 | Task 9: Slides and video | Slides và video | cả ba (Vỹ ghép) | M4 | 8 |
 | 10 | Task 10: AI-LOG merge, self-assessment, ZIP and submission | AI-LOG, tự chấm, ZIP và nộp | Vỹ (Vượng và Phúc giữ log riêng trong `ai/`) | M5 | 8, 9 |
@@ -49,22 +51,22 @@ Log AI của Task 0 nằm ở `ai/vy/AI-LOG.md` (đã viết): khung repo và co
 
 Xong khi: cả ba clone được repo và đã xác nhận contract.
 
-## Task 2: Service — hai mode cache — Vượng — M2 22/11
+## Task 2: Service — hai mode cache — Vượng — M2 20/11
 
 - `app/`: `GET /products/:id` cho `plain` và `coalesced` theo `CONTRACT.md` mục 2–4, đủ header, Lua release, waiter poll/timeout/fallback.
 - `/healthz` kiểm Redis và Postgres thật; `/config` đúng cấu trúc v1.1.
 
 Xong khi: payload hai mode khớp hash; cache hit cho `X-DB-Queries=0`; một request sau expiry cho 1 query; PR có Vỹ review.
 
-## Task 3: Hạ tầng, calibrate và test lock — Vượng — M2 22/11
+## Task 3: Hạ tầng, calibrate và test lock — Vượng — M2 20/11 (test lock xong trước pilot 21/11)
 
-- Rà `compose.yaml`, seed; calibrate `SEED_REVIEWS` và `cpus` trên máy chuẩn; ghi số đo.
+- Rà `compose.yaml`, seed; calibrate hạ tầng (`SEED_REVIEWS`, `cpus`) trên máy chuẩn xong 20/11; ghi số đo. Các giá trị `[calibrate]` khác (`CACHE_TTL_MS`, lease, poll…) chốt trong pilot 20–21/11.
 - Test lock chủ ý (checklist #10–14): recheck, thứ tự ghi cache trước nhả lock, lease ngắn hơn query, giết holder, waiter timeout. Mỗi case có log.
 - Chạy fresh clone trên máy Vượng, làm đúng README, `PAIRS=1`.
 
-Xong khi: checklist #9–14 có evidence; fresh clone chạy được trên máy thứ hai.
+Xong khi: checklist #9–14 có evidence; fresh clone chạy được trên máy thứ hai. Nếu đã cắt "máy thứ hai" thì chỉ cần fresh clone trên máy chuẩn.
 
-## Task 4: Runner đo — Phúc — M2 22/11
+## Task 4: Runner đo — Phúc — M2 20/11
 
 - `benchmark/` theo `CONTRACT.md` mục 6–8: kiểm `/healthz` và `/config`, warm-up, chờ expiry thật, snapshot `pg_stat_statements`, burst 200 qua hai instance (keep-alive, monotonic clock), ghi `requests.jsonl`, `summary.json`, validity, thứ tự cặp xen kẽ.
 - Một command: `docker compose run --rm benchmark`; cuối lệnh gọi `benchmark/src/aggregate.js` (Task 6) để in bảng số liệu.
@@ -72,7 +74,7 @@ Xong khi: checklist #9–14 có evidence; fresh clone chạy được trên máy
 
 Xong khi: chạy được một cặp từ fresh clone, log đủ field, lượt invalid giữ log kèm `invalid_reasons`; PR có Vỹ review.
 
-## Task 5: Pilot, đóng băng và chạy official — Phúc — M3 25/11
+## Task 5: Pilot, đóng băng và chạy official — Phúc — M3 22/11 (pilot 21/11, đóng băng 21/11, official 22/11)
 
 - Chạy pilot 5 lượt mỗi mode, điền `docs/PILOT-CHECKLIST.md` kèm evidence (mục #6, #7 chỉ cần phép đo hợp lệ, không có ngưỡng đạt/trượt).
 - Cùng Vỹ đóng băng giá trị `[calibrate]` rồi ghi vào contract và README.
@@ -80,7 +82,7 @@ Xong khi: chạy được một cặp từ fresh clone, log đủ field, lượt
 
 Xong khi: checklist đủ evidence; `results/official/` có mọi lượt kể cả lượt invalid kèm lý do.
 
-## Task 6: Aggregate và phân tích kết quả — Vỹ — M3 25/11
+## Task 6: Aggregate và phân tích kết quả — Vỹ — M2 20/11 (aggregate), phân tích xong 23/11
 
 - Viết `benchmark/src/aggregate.js`: đọc `results/<kind>/` (`pilot` hoặc `official`), ghi `summary.csv` và `report_table.md` cùng thư mục đó theo `CONTRACT.md` mục 7; p95 nearest-rank, `delta_p95_ms` theo cặp, median và min–max.
 - Phân tích nguyên nhân từ log: pool wait, lock wait, số `miss-fallback`; báo cáo đúng dấu của delta.
@@ -88,15 +90,16 @@ Xong khi: checklist đủ evidence; `results/official/` có mọi lượt kể c
 
 Xong khi: tính lại độc lập được các con số chính từ `requests.jsonl`.
 
-## Task 7: Review chéo, kiểm nguồn và fresh clone — Vỹ — M2–M3
+## Task 7: Review chéo, kiểm nguồn và fresh clone — Vỹ — review PR xong trước 21/11, phần còn lại 22/11
 
-- Review PR của Task 2, 3, 4 theo mẫu bàn giao trong `context.md`; gửi Claude review khi cần.
+- Review PR của Task 2, 3, 4 theo mẫu bàn giao trong `context.md`; gửi Claude review khi cần. **Xong trước khi đóng băng (≤ 21/11)** để lỗi service/runner không buộc chạy lại official.
+- Phần dưới đây giữ hạn 22/11:
 - Kiểm official docs và release notes (Redis, Postgres, Docker, Node): version, ngày đọc cho mục "Nguồn".
 - Fresh clone lần cuối trên máy Vỹ sau khi đóng băng.
 
 Xong khi: không còn finding mở; mỗi claim về version có link kèm ngày đọc.
 
-## Task 8: REPORT và README — Vỹ giữ, cả ba viết phần mình — M4 28/11
+## Task 8: REPORT và README — Vỹ giữ, cả ba viết phần mình — M4 24/11
 
 - Vượng: Setup, baseline và thay đổi, thiết kế lock, giới hạn của lock.
 - Phúc: Kết quả, spread, README (điền môi trường đo).
@@ -104,20 +107,20 @@ Xong khi: không còn finding mở; mỗi claim về version có link kèm ngày
 
 Xong khi: đủ mục theo đề, số trùng log, một người ngoài làm theo README chạy được `PAIRS=1`.
 
-## Task 9: Slides và video — cả ba, Vỹ ghép — M4 28/11
+## Task 9: Slides và video — cả ba, Vỹ ghép — M4 24/11
 
 - Mỗi người làm slides và quay phần của mình; Vỹ dựng bộ khung chung, ghép, đối chiếu headline với report.
 - Video ≤ 8 phút, mở đầu bằng câu hỏi, cho thấy phép đo hoặc log, nêu số liệu chính kèm đơn vị và spread, kết thúc bằng khuyến nghị; link vào `TALK.md`.
 
 Xong khi: `slides.pdf` và video xong, ai cũng có phần trình bày.
 
-## Task 10: AI-LOG, tự chấm, ZIP và nộp — Vỹ — M5 29/11 22:00
+## Task 10: AI-LOG, tự chấm, ZIP và nộp — Vỹ — M5 25/11
 
 - Mỗi người giữ fragment trong `ai/<tên>/AI-LOG.md` (xem `ai/README.md`), ghi Changed, Rejected, lỗi assistant phát hiện. Vỹ tổng hợp ba fragment thành `AI-LOG.md` ở root, giữ trung thực phần By hand của từng người.
 - `SELF_ASSESSMENT_REPORT.md`: mỗi tiêu chí kèm evidence; tổng khớp `<total>` trong tên ZIP.
 - Đóng gói ZIP có `.git` tên `23120328-23120409-23120410_<total>.zip`; kiểm repo public, link video, fresh clone cuối; nộp bằng tài khoản `<StudentID>@student.hcmus.edu.vn`; đăng Facebook nếu tham gia bình chọn.
 
-Xong khi: nộp trước 22:00 29/11.
+Xong khi: ZIP đã kiểm và **được nộp ngày 25/11**. Hạn 29/11 22:00 chỉ dùng nếu có sự cố khi nộp.
 
 ## Task 11: Red team — cả ba — M6 02/12 22:00
 
