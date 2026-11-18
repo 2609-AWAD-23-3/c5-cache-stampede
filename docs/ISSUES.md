@@ -8,7 +8,7 @@
 | M2 Code | 20/11 | service, runner, aggregate chạy được; hạ tầng và calibrate xong |
 | M3 Official | 22/11 | pilot 21/11, đóng băng cấu hình 21/11, official 22/11 |
 | M4 Docs | 24/11 | REPORT, README, slides, video |
-| M5 Final | 25/11 | bản final: AI-LOG, tự chấm, ZIP đã kiểm; nộp ngay khi sẵn sàng, hạn chính thức 29/11 22:00 chỉ là dự phòng |
+| M5 Final | 25/11 | bản final: AI-LOG, tự chấm, ZIP đã kiểm và **nộp ngày 25/11**; hạn chính thức 29/11 22:00 chỉ dự phòng khi có sự cố nộp |
 | M6 Red team | 02/12 22:00 | issue red team |
 
 Nếu trễ, cắt theo thứ tự: sensitivity poll 1/20 ms, mức tải 20 request, máy thứ hai, 10 cặp xuống 6 cặp (không dưới 5).
@@ -119,7 +119,7 @@ Xong khi: `slides.pdf` và video xong, ai cũng có phần trình bày.
 - `SELF_ASSESSMENT_REPORT.md`: mỗi tiêu chí kèm evidence; tổng khớp `<total>` trong tên ZIP.
 - Đóng gói ZIP có `.git` tên `23120328-23120409-23120410_<total>.zip`; kiểm repo public, link video, fresh clone cuối; nộp bằng tài khoản `<StudentID>@student.hcmus.edu.vn`; đăng Facebook nếu tham gia bình chọn.
 
-Xong khi: bộ nộp hoàn chỉnh và ZIP đã kiểm vào 25/11; nộp ngay khi sẵn sàng, không muộn hơn 22:00 29/11.
+Xong khi: ZIP đã kiểm và **được nộp ngày 25/11**. Hạn 29/11 22:00 chỉ dùng nếu có sự cố khi nộp.
 
 ## Task 11: Red team — cả ba — M6 02/12 22:00
 
