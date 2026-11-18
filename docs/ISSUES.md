@@ -1,6 +1,6 @@
 # Issue board C5 (v4, 17/11/2026)
 
-12 issue (Task 0 đã xong). Mỗi mục là một GitHub issue: tiêu đề `Task N: tên`, assignee, milestone. Việc nhỏ (review, README, AI-LOG…) nằm trong checklist của task lớn, không tách issue riêng.
+12 issue (Task 0 đã xong). Mỗi mục là một GitHub issue: assignee, milestone. **Quy ước:** title của issue và PR viết bằng tiếng Anh (cột "Title" bên dưới); description và nội dung viết bằng tiếng Việt cho dễ đọc. Việc nhỏ (review, README, AI-LOG…) nằm trong checklist của task lớn, không tách issue riêng.
 
 | Mốc | Hạn | Nội dung |
 | --- | --- | --- |
@@ -13,20 +13,20 @@
 
 ## Bảng tổng
 
-| Task | Tên | Assignee | Mốc | Phụ thuộc |
-| ---: | --- | --- | --- | --- |
-| 0 | Brainstorm, kế hoạch, review thiết kế, contract và khung repo | **Vỹ** (đã xong) | — | — |
-| 1 | Tạo repo public và chốt contract | Vỹ | M1 | 0 |
-| 2 | Service: hai mode cache | Vượng | M2 | 1 |
-| 3 | Hạ tầng, calibrate và test lock | Vượng | M2 | 2 |
-| 4 | Runner đo | Phúc | M2 | 1 |
-| 5 | Pilot, đóng băng và chạy official | Phúc | M3 | 2, 3, 4 |
-| 6 | Aggregate và phân tích kết quả | Vỹ | M3 | 4, 5 |
-| 7 | Review chéo, kiểm nguồn và fresh clone | Vỹ | M2–M3 | 2, 3, 4 |
-| 8 | REPORT và README | Vỹ (Vượng và Phúc viết phần của mình) | M4 | 5, 6 |
-| 9 | Slides và video | cả ba (Vỹ ghép) | M4 | 8 |
-| 10 | AI-LOG, tự chấm, ZIP và nộp | Vỹ (Vượng và Phúc giữ log riêng trong `ai/`) | M5 | 8, 9 |
-| 11 | Red team | cả ba | M6 | 10 |
+| Task | Title (tiếng Anh, dùng làm title issue) | Tên | Assignee | Mốc | Phụ thuộc |
+| ---: | --- | --- | --- | --- | --- |
+| 0 | Task 0: Brainstorm, plan, design review, contract and repo skeleton | Brainstorm, kế hoạch, review thiết kế, contract và khung repo | **Vỹ** (đã xong) | — | — |
+| 1 | Task 1: Create public repo and finalize contract | Tạo repo public và chốt contract | Vỹ | M1 | 0 |
+| 2 | Task 2: Service with plain and coalesced cache modes | Service: hai mode cache | Vượng | M2 | 1 |
+| 3 | Task 3: Infrastructure, calibration and lock tests | Hạ tầng, calibrate và test lock | Vượng | M2 | 2 |
+| 4 | Task 4: Benchmark runner | Runner đo | Phúc | M2 | 1 |
+| 5 | Task 5: Pilot, freeze and official runs | Pilot, đóng băng và chạy official | Phúc | M3 | 2, 3, 4 |
+| 6 | Task 6: Aggregation and result analysis | Aggregate và phân tích kết quả | Vỹ | M3 | 4, 5 |
+| 7 | Task 7: Cross-review, source verification and fresh clone | Review chéo, kiểm nguồn và fresh clone | Vỹ | M2–M3 | 2, 3, 4 |
+| 8 | Task 8: REPORT and README | REPORT và README | Vỹ (Vượng và Phúc viết phần của mình) | M4 | 5, 6 |
+| 9 | Task 9: Slides and video | Slides và video | cả ba (Vỹ ghép) | M4 | 8 |
+| 10 | Task 10: AI-LOG merge, self-assessment, ZIP and submission | AI-LOG, tự chấm, ZIP và nộp | Vỹ (Vượng và Phúc giữ log riêng trong `ai/`) | M5 | 8, 9 |
+| 11 | Task 11: Red team | Red team | cả ba | M6 | 10 |
 
 Phân bổ: **Vượng** Task 2, 3 (+ phần trong 8, 9, 10). **Phúc** Task 4, 5 (+ phần trong 8, 9, 10). **Vỹ** Task 0, 1, 6, 7 và giữ 8, 9, 10 làm đầu mối tích hợp. Vượng và Phúc mỗi người có hai task kỹ thuật nặng; Vỹ có nhiều task hơn nhưng nhẹ hơn về code, nặng về phối hợp và tài liệu. Nếu Vỹ thấy nặng hoặc nhẹ so với hai bạn, đổi chủ Task 6 hoặc Task 7.
 
