@@ -33,7 +33,7 @@ Cùng image, cùng seed, cùng cấu hình cho hai mode. Hai mode chỉ khác nh
 - Response `200`, `Content-Type: application/json`. Body **byte-identical** giữa hai mode với cùng product (runner so SHA-256 của body):
 
 ```json
-{"id":1,"name":"Product 1","price_cents":1999,"review_count":80000,"avg_rating":3}
+{"id":1,"name":"Product 1","price_cents":1999,"review_count":30000,"avg_rating":3}
 ```
 
 - Thứ tự key và định dạng số phải ổn định. Không nhúng timestamp, instance hay mode vào body.
@@ -159,7 +159,7 @@ Lock chỉ đúng với single-node Redis; không phải Redlock. Ghi vào limit
 | --- | --- | --- | --- |
 | `CACHE_TTL_MS` | 3000 | chung | `[calibrate]` phải dài hơn thời gian burst |
 | `PG_POOL_MAX` | 10 | chung | mỗi instance |
-| `SEED_REVIEWS` | 800000 | chung | `[calibrate]` chỉnh độ nặng query |
+| `SEED_REVIEWS` | 300000 | chung | `[calibrate]` chỉnh độ nặng query; đo trên máy chuẩn (máy Vượng) 19/11: p50 33 ms, p90 39 ms |
 | `LOCK_LEASE_MS` | 5000 | riêng coalesced | phải lớn hơn thời gian query |
 | `WAIT_POLL_MS` | 5 | riêng coalesced | cố định, không jitter |
 | `WAIT_TIMEOUT_MS` | 2000 | riêng coalesced | hết thì fallback |
@@ -237,7 +237,7 @@ Xem bảng checklist trong `docs/PILOT-CHECKLIST.md`. Contract coi là "đạt" 
 | Version | Ngày | Thay đổi |
 | --- | --- | --- |
 | 1.0 | 17/11/2026 | Bản đầu, theo quyết định D1–D12. |
-| 1.1 | 17/11/2026 | Theo review của Codex: (1) `/config` tách metadata (`instance`, `port`) khỏi `params` cần khớp; (2) fallback và query lặp ở coalesced giữ trong median chính, không còn là lý do loại lượt; (3) bỏ ngưỡng "plain gần 200 query". `SEED_REVIEWS` = 800000 sau khi đo query 34–40 ms. |
+| 1.1 | 17/11/2026 | Theo review của Codex: (1) `/config` tách metadata (`instance`, `port`) khỏi `params` cần khớp; (2) fallback và query lặp ở coalesced giữ trong median chính, không còn là lý do loại lượt; (3) bỏ ngưỡng "plain gần 200 query". `SEED_REVIEWS` = 800000 sau khi đo query 34–40 ms (đo trên máy Vỹ; máy chuẩn sau đó chốt là máy Vượng, xem 1.4). |
 | 1.2 | 18/11/2026 | Theo đề xuất của Phúc ở issue #1: `summary.csv` và `report_table.md` được ghi vào `results/<kind>/` (pilot và official), không chỉ `results/official/`; làm rõ runner (Task 4) ghi dữ liệu từng lượt và gọi aggregate (Task 6) ở cuối lệnh. |
 | 1.3 | 18/11/2026 | Rút lịch: bản final xong 25/11 (hạn nộp chính thức 29/11 là dự phòng); pilot 20–21/11, đóng băng trước 22/11, official 22/11. Thêm phương án dự phòng 6 cặp ở mục 6 (theo review của Vượng). Không đổi API, định dạng log hay quy tắc đo. |
-| 1.4 | 19/11/2026 | Chỉ sửa câu chữ cho khớp code Task 2 (#16), theo review của Vượng và Vỹ: cách gọi query (tách bước lấy connection để đo pool wait, mục 3), phạm vi log `X-Request-Id` (mục 2), xử lý lỗi Redis (mục 4.5); pilot 20–21/11 ở đầu file và dòng 1.3. Không đổi API, định dạng log hay quy tắc đo. |
+| 1.4 | 19/11/2026 | Sửa câu chữ cho khớp code Task 2 (#16), theo review của Vượng và Vỹ: cách gọi query (tách bước lấy connection để đo pool wait, mục 3), phạm vi log `X-Request-Id` (mục 2), xử lý lỗi Redis (mục 4.5); pilot 20–21/11 ở đầu file và dòng 1.3. Calibrate hạ tầng (Task 3) trên máy chuẩn là máy Vượng: `SEED_REVIEWS` 800000 → 300000 vì 800000 cho query p50 85 ms (ngoài 20–50 ms); ví dụ body đổi `review_count` 80000 → 30000; ghi chú dòng 1.1 đo trên máy Vỹ. Không đổi API, định dạng log hay quy tắc đo. |
