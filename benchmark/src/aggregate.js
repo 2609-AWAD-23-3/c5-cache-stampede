@@ -268,6 +268,21 @@ export function writeAggregateOutputs(kindDir, summaries) {
   const plainRuns = validRuns.filter((s) => s.mode === 'plain');
   const coalescedRuns = validRuns.filter((s) => s.mode === 'coalesced');
 
+  const validByPairMode = new Map();
+  for (const s of validRuns) {
+    const key = `${s.pair}:${s.mode}`;
+    if (!validByPairMode.has(key)) validByPairMode.set(key, []);
+    validByPairMode.get(key).push(s);
+  }
+  const duplicateWarnings = [];
+  for (const [key, list] of validByPairMode.entries()) {
+    if (list.length > 1) {
+      const msg = `Multiple valid runs (${list.length}) for pair/mode ${key}: ${list.map((r) => r.run_id).join(', ')}`;
+      console.warn(`[aggregate] WARNING: ${msg}`);
+      duplicateWarnings.push(msg);
+    }
+  }
+
   const byPair = new Map();
   for (const s of validRuns) {
     if (!byPair.has(s.pair)) byPair.set(s.pair, {});
@@ -319,6 +334,12 @@ export function writeAggregateOutputs(kindDir, summaries) {
   );
   lines.push('- All latencies use nearest-rank percentile on `status == 200` requests.');
   lines.push('- `delta_p95_ms = p95_coalesced - p95_plain` (negative means p95 latency decreased).');
+  if (duplicateWarnings.length > 0) {
+    lines.push('');
+    lines.push(
+      `> **Warning:** ${duplicateWarnings.join(' | ')}. Paired table uses the latest valid run per (pair, mode); run official benchmarks in a clean directory.`,
+    );
+  }
   lines.push('');
   lines.push('## 1. Aggregate Summary (median (min–max))');
   lines.push('');

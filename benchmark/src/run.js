@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import pg from 'pg';
 import { createClient } from 'redis';
 import { Pool } from 'undici';
-import { computeRunSummary, writeAggregateOutputs } from './aggregate.js';
+import { computeRunSummary, recomputeAndAggregateDir } from './aggregate.js';
 import { epochMsNow, getCachePttl, round3, sleep, takePgSnapshot, waitForCacheExpiry } from './stats.js';
 
 const CANONICAL_PRODUCT_1_JSON = '{"id":1,"name":"Product 1","price_cents":1999,"review_count":80000,"avg_rating":3}';
@@ -390,6 +390,8 @@ export async function runBenchmark(env = process.env) {
     throw new Error(`BURST_SIZE must be a positive integer, got: ${env.BURST_SIZE}`);
   }
 
+  const clientHeadersTimeoutMs = 10000;
+  const clientBodyTimeoutMs = 10000;
   const perInstancePoolConns = Math.ceil(burstSize / appUrls.length) + 5;
   const instances = appUrls.map((url) => ({
     url,
@@ -399,8 +401,8 @@ export async function runBenchmark(env = process.env) {
       pipelining: 1,
       keepAliveTimeout: 60000,
       keepAliveMaxTimeout: 60000,
-      headersTimeout: 10000,
-      bodyTimeout: 10000,
+      headersTimeout: clientHeadersTimeoutMs,
+      bodyTimeout: clientBodyTimeoutMs,
     }),
   }));
 
@@ -484,6 +486,7 @@ export async function runBenchmark(env = process.env) {
             baselinePayloadSha256,
           });
 
+          const cpus = os.cpus();
           const configRecord = {
             run_id: runId,
             mode,
@@ -493,6 +496,8 @@ export async function runBenchmark(env = process.env) {
             pairs_total: pairs,
             order_seed: orderSeed,
             results_kind: resultsKind,
+            client_headers_timeout_ms: clientHeadersTimeoutMs,
+            client_body_timeout_ms: clientBodyTimeoutMs,
             fill_pttl_ms: fillPttlMs,
             expiry_confirmed,
             expiry_confirmed_ts,
@@ -504,6 +509,9 @@ export async function runBenchmark(env = process.env) {
               hostname: os.hostname(),
               platform: `${os.platform()} ${os.release()}`,
               arch: os.arch(),
+              cpu_count: cpus.length,
+              cpu_model: cpus[0]?.model || 'unknown',
+              total_memory_mb: Math.round(os.totalmem() / (1024 * 1024)),
               git_commit: instanceConfigs[0].git_commit ?? 'unknown',
             },
           };
@@ -545,7 +553,7 @@ export async function runBenchmark(env = process.env) {
       }
     }
 
-    const reportMarkdown = writeAggregateOutputs(kindDir, allSummaries);
+    const { summaries: aggregatedSummaries, markdown: reportMarkdown } = recomputeAndAggregateDir(kindDir);
     console.log(`\n${reportMarkdown}`);
 
     if (hasFailedRun && !allowInvalidExitZero) {
@@ -556,7 +564,7 @@ export async function runBenchmark(env = process.env) {
       );
     }
 
-    return { summaries: allSummaries, kindDir, reportMarkdown };
+    return { summaries: allSummaries, aggregatedSummaries, kindDir, reportMarkdown };
   } finally {
     await Promise.allSettled([
       ...instances.map((i) => i.pool.close()),

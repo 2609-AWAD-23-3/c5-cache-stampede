@@ -471,7 +471,12 @@ async function runTests() {
       assert.ok(s.burst_span_ms <= 100, `Expected burst_span_ms <= 100, got ${s.burst_span_ms}`);
 
       const runDir = path.join(t2Dir, 'pilot', s.run_id);
-      assert.ok(fs.existsSync(path.join(runDir, 'config.json')));
+      const cfg = JSON.parse(fs.readFileSync(path.join(runDir, 'config.json'), 'utf8'));
+      assert.equal(cfg.client_headers_timeout_ms, 10000);
+      assert.equal(cfg.client_body_timeout_ms, 10000);
+      assert.ok(cfg.runner.cpu_count > 0);
+      assert.ok(typeof cfg.runner.cpu_model === 'string' && cfg.runner.cpu_model.length > 0);
+      assert.ok(cfg.runner.total_memory_mb > 0);
       assert.ok(fs.existsSync(path.join(runDir, 'snapshots', 'before.json')));
       assert.ok(fs.existsSync(path.join(runDir, 'snapshots', 'after.json')));
       assert.ok(fs.existsSync(path.join(runDir, 'summary.json')));
@@ -506,7 +511,19 @@ async function runTests() {
     execFileSync(process.execPath, [aggScript, path.join(t2Dir, 'pilot')], { stdio: 'pipe' });
     const recomputed = recomputeAndAggregateDir(path.join(t2Dir, 'pilot'));
     assert.equal(recomputed.summaries.length, 2);
-    console.log('PASS: End-to-end PAIRS=1 BURST_SIZE=200 + independent aggregate recomputation.');
+
+    // Re-running into existing results/<kind>/ aggregates all runs and warns on duplicate valid (pair, mode)
+    const t2SecondRes = await runBenchmark({
+      ...baseEnv,
+      BURST_SIZE: '20',
+      RESULTS_DIR: t2Dir,
+      RESULTS_KIND: 'pilot',
+    });
+    assert.equal(t2SecondRes.aggregatedSummaries.length, 4);
+    const csvLines = fs.readFileSync(path.join(t2Dir, 'pilot', 'summary.csv'), 'utf8').trim().split('\n');
+    assert.equal(csvLines.length, 5); // header + 4 runs
+    assert.ok(t2SecondRes.reportMarkdown.includes('Multiple valid runs (2) for pair/mode 1:plain'));
+    console.log('PASS: End-to-end PAIRS=1 BURST_SIZE=200 + multi-run aggregate + duplicate warning.');
 
     // 3. Invalid run preserved + replacement run succeeds
     cacheMap.clear();

@@ -30,6 +30,19 @@ Log của Phúc cho phần việc của mình: xác nhận contract (Task 1) và
   - `docker compose build benchmark` và `docker compose run --rm -e PAIRS=1 -e BURST_SIZE=20 benchmark` chạy qua stack thật (`postgres:16` với `pg_stat_statements` và seed 800k dòng, `redis:7`, `app1`/`app2` stub): kiểm `/healthz` + `/config` khớp, snapshot `pg_stat_statements` dưới role `bench_ro` thành công, phát hiện `501` stub từ `app`, lưu đủ log lượt invalid (`n_ok=0/20`, `app1: 10, app2: 10`), xuất `summary.csv` & `report_table.md` rồi dọn sạch bằng `docker compose down -v`.
   - Đồng bộ branch theo `origin/main` (`4a4ec54`, PR #2 và #3) và duyệt PR #14 (`CONTRACT.md` v1.3).
 
+## 2026-11-19 — Task 4: Xử lý góp ý review PR #15
+
+- **Tool**: Antigravity.
+- **Asked for**: Cập nhật `benchmark/` theo góp ý của `@tranquocvy` ở PR #15 (dùng `recomputeAndAggregateDir(kindDir)` ở cuối `run.js` kèm cảnh báo trùng `(pair, mode)`, ghi timeout client vào `config.json`, bổ sung thông tin CPU/RAM máy chạy).
+- **Kept**:
+  - `benchmark/src/run.js`: chuyển sang gọi `recomputeAndAggregateDir(kindDir)` ở cuối lệnh; ghi `client_headers_timeout_ms`, `client_body_timeout_ms` (giữ nguyên 10000 ms), `cpu_count`, `cpu_model`, `total_memory_mb` vào `config.json`.
+  - `benchmark/src/aggregate.js`: cảnh báo qua `console.warn` và ghi chú trong `report_table.md` khi tồn tại hơn 1 lượt valid cùng `(pair, mode)`.
+  - `benchmark/test/selftest.js`: bổ sung test kiểm tra các trường mới trong `config.json` và chạy 2 lần liên tiếp vào cùng `results/<kind>/` để xác minh tổng hợp đủ cả 4 lượt kèm cảnh báo trùng.
+- **Changed**: Không giữ `writeAggregateOutputs(kindDir, allSummaries)` cho riêng lượt hiện tại nữa mà quét toàn bộ thư mục `results/<kind>/`.
+- **Rejected**: Không nâng client timeout lên trên 10 s (giữ nguyên 10000 ms theo yêu cầu của Vỹ để việc hiệu chỉnh nằm ở Task 3).
+- **By hand**: Phúc đọc review của Vỹ trên PR #15 và quyết định sửa ngay vào nhánh trước khi merge, đồng thời thêm thông tin CPU/RAM như gợi ý.
+- **Kiểm chứng**: `node --check` trên tất cả file JS và `npm test` (`benchmark/test/selftest.js`) pass toàn bộ sau khi sửa.
+
 ## Lỗi assistant / vấn đề phát hiện trong quá trình làm
 
 | # | Lỗi / Vấn đề | Assistant | Cách phát hiện | Cách sửa |
