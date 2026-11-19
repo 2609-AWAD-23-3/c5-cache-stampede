@@ -1,0 +1,193 @@
+{
+  "case": 13,
+  "name": "Lock: giết holder giữa lúc query",
+  "pass": true,
+  "expected": "waiter không treo: hết WAIT_TIMEOUT_MS thì miss-fallback; lock của holder chết tự hết sau lease; request mới sau đó lấy lock (miss-query)",
+  "lock_held_by_holder_before_kill": "c082bbe0-0308-4fd7-bcc6-06af58191d47",
+  "holder_response": "Error: socket hang up",
+  "waiters": [
+    {
+      "result": "miss-fallback",
+      "lock_wait_ms": 2008.248,
+      "db_queries": 1
+    },
+    {
+      "result": "miss-fallback",
+      "lock_wait_ms": 2008.303,
+      "db_queries": 1
+    },
+    {
+      "result": "miss-fallback",
+      "lock_wait_ms": 2007.343,
+      "db_queries": 1
+    },
+    {
+      "result": "miss-fallback",
+      "lock_wait_ms": 2003.829,
+      "db_queries": 1
+    },
+    {
+      "result": "miss-fallback",
+      "lock_wait_ms": 2002.623,
+      "db_queries": 1
+    },
+    {
+      "result": "miss-fallback",
+      "lock_wait_ms": 2002.725,
+      "db_queries": 1
+    },
+    {
+      "result": "miss-fallback",
+      "lock_wait_ms": 2000.518,
+      "db_queries": 1
+    },
+    {
+      "result": "miss-fallback",
+      "lock_wait_ms": 2002.536,
+      "db_queries": 1
+    },
+    {
+      "result": "miss-fallback",
+      "lock_wait_ms": 2000.918,
+      "db_queries": 1
+    },
+    {
+      "result": "miss-fallback",
+      "lock_wait_ms": 2002.137,
+      "db_queries": 1
+    }
+  ],
+  "lock_pttl_after_waiters_ms": 1293,
+  "lock_expired_after_kill_ms": 2626,
+  "after_lease": {
+    "result": "miss-query",
+    "db_queries": 1
+  },
+  "log_events": [
+    {
+      "ts": 1795067143506,
+      "instance": "app1",
+      "event": "lock_acquired",
+      "token": "c082bbe0-0308-4fd7-bcc6-06af58191d47",
+      "request_id": "c13-holder",
+      "product_id": 1,
+      "mode": "coalesced"
+    },
+    {
+      "ts": 1795067146573,
+      "instance": "app2",
+      "event": "fallback",
+      "reason": "wait_timeout",
+      "request_id": "c13-waiter-9",
+      "product_id": 1,
+      "mode": "coalesced"
+    },
+    {
+      "ts": 1795067146573,
+      "instance": "app2",
+      "event": "fallback",
+      "reason": "wait_timeout",
+      "request_id": "c13-waiter-8",
+      "product_id": 1,
+      "mode": "coalesced"
+    },
+    {
+      "ts": 1795067146574,
+      "instance": "app2",
+      "event": "fallback",
+      "reason": "wait_timeout",
+      "request_id": "c13-waiter-6",
+      "product_id": 1,
+      "mode": "coalesced"
+    },
+    {
+      "ts": 1795067146574,
+      "instance": "app2",
+      "event": "fallback",
+      "reason": "wait_timeout",
+      "request_id": "c13-waiter-3",
+      "product_id": 1,
+      "mode": "coalesced"
+    },
+    {
+      "ts": 1795067146574,
+      "instance": "app2",
+      "event": "fallback",
+      "reason": "wait_timeout",
+      "request_id": "c13-waiter-4",
+      "product_id": 1,
+      "mode": "coalesced"
+    },
+    {
+      "ts": 1795067146574,
+      "instance": "app2",
+      "event": "fallback",
+      "reason": "wait_timeout",
+      "request_id": "c13-waiter-5",
+      "product_id": 1,
+      "mode": "coalesced"
+    },
+    {
+      "ts": 1795067146574,
+      "instance": "app2",
+      "event": "fallback",
+      "reason": "wait_timeout",
+      "request_id": "c13-waiter-1",
+      "product_id": 1,
+      "mode": "coalesced"
+    },
+    {
+      "ts": 1795067146574,
+      "instance": "app2",
+      "event": "fallback",
+      "reason": "wait_timeout",
+      "request_id": "c13-waiter-0",
+      "product_id": 1,
+      "mode": "coalesced"
+    },
+    {
+      "ts": 1795067146574,
+      "instance": "app2",
+      "event": "fallback",
+      "reason": "wait_timeout",
+      "request_id": "c13-waiter-7",
+      "product_id": 1,
+      "mode": "coalesced"
+    },
+    {
+      "ts": 1795067146574,
+      "instance": "app2",
+      "event": "fallback",
+      "reason": "wait_timeout",
+      "request_id": "c13-waiter-2",
+      "product_id": 1,
+      "mode": "coalesced"
+    },
+    {
+      "ts": 1795067149866,
+      "instance": "app2",
+      "event": "lock_acquired",
+      "token": "82f60478-3986-4f6d-9790-6b579d6e73d9",
+      "request_id": "c13-after-lease",
+      "product_id": 1,
+      "mode": "coalesced"
+    },
+    {
+      "ts": 1795067149895,
+      "instance": "app2",
+      "event": "cache_set",
+      "request_id": "c13-after-lease",
+      "product_id": 1,
+      "mode": "coalesced"
+    },
+    {
+      "ts": 1795067149895,
+      "instance": "app2",
+      "event": "lock_released",
+      "token": "82f60478-3986-4f6d-9790-6b579d6e73d9",
+      "request_id": "c13-after-lease",
+      "product_id": 1,
+      "mode": "coalesced"
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "mode": "coalesced",
+  "pair": 1,
+  "attempt": 1,
+  "run_id": "20261119T054634Z-coalesced-1",
+  "queries_per_expiry": 1,
+  "sum_db_queries_from_headers": 1,
+  "p95_ms": 134.968,
+  "p50_ms": 108.051,
+  "max_ms": 135.533,
+  "min_ms": 71.566,
+  "n_ok": 200,
+  "n_error": 0,
+  "burst_span_ms": 26.698,
+  "expiry_confirmed": true,
+  "expiry_confirmed_ts": 1795067197608.092,
+  "burst_start_ts": 1795067197608.189,
+  "hit_count": 0,
+  "miss_query_count": 1,
+  "miss_wait_count": 199,
+  "miss_fallback_count": 0,
+  "hit_rate": 0,
+  "median_lock_wait_ms": 39.318,
+  "median_pool_wait_ms": 0,
+  "median_query_ms": 27.719,
+  "instance_counts": {
+    "app1": 100,
+    "app2": 100
+  },
+  "valid": true,
+  "invalid_reasons": []
+}

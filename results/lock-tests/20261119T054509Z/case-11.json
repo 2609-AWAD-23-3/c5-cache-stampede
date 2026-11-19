@@ -1,0 +1,80 @@
+{
+  "case": 11,
+  "name": "Lock: thứ tự ghi cache trước khi nhả lock",
+  "pass": true,
+  "expected": "đúng 1 holder ghi cache, và cache_set trước lock_released; holder gặp recheck_hit thì nhả lock mà không ghi",
+  "holders": [
+    {
+      "request_id": "c10-1",
+      "events": [
+        "lock_acquired",
+        "cache_set",
+        "lock_released"
+      ],
+      "ok": true
+    },
+    {
+      "request_id": "c10-2",
+      "events": [
+        "lock_acquired",
+        "recheck_hit",
+        "lock_released"
+      ],
+      "ok": true
+    }
+  ],
+  "log_events": [
+    {
+      "ts": 1795067117606,
+      "instance": "app2",
+      "event": "lock_acquired",
+      "token": "77812c56-2d78-4bed-970d-81e7b15ebbe4",
+      "request_id": "c10-1",
+      "product_id": 1,
+      "mode": "coalesced"
+    },
+    {
+      "ts": 1795067117650,
+      "instance": "app2",
+      "event": "cache_set",
+      "request_id": "c10-1",
+      "product_id": 1,
+      "mode": "coalesced"
+    },
+    {
+      "ts": 1795067117653,
+      "instance": "app2",
+      "event": "lock_released",
+      "token": "77812c56-2d78-4bed-970d-81e7b15ebbe4",
+      "request_id": "c10-1",
+      "product_id": 1,
+      "mode": "coalesced"
+    },
+    {
+      "ts": 1795067117666,
+      "instance": "app1",
+      "event": "lock_acquired",
+      "token": "ee51e5da-c8da-4208-8b85-b1bd3a1ad0cf",
+      "request_id": "c10-2",
+      "product_id": 1,
+      "mode": "coalesced"
+    },
+    {
+      "ts": 1795067117698,
+      "instance": "app1",
+      "event": "recheck_hit",
+      "request_id": "c10-2",
+      "product_id": 1,
+      "mode": "coalesced"
+    },
+    {
+      "ts": 1795067117708,
+      "instance": "app1",
+      "event": "lock_released",
+      "token": "ee51e5da-c8da-4208-8b85-b1bd3a1ad0cf",
+      "request_id": "c10-2",
+      "product_id": 1,
+      "mode": "coalesced"
+    }
+  ]
+}

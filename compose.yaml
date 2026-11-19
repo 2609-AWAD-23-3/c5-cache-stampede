@@ -1,5 +1,6 @@
 # Owner: Vượng (stanza `benchmark`: Phúc, qua PR có Vượng review)
-# Pin image tag/digest ở Task 3, ghi vào REPORT.md (kèm ngày đọc docs).
+# Image pin theo tag cụ thể + digest (Task 3, kiểm 19/11/2026 bằng `docker image inspect`):
+#   postgres:16 = 16.16, redis:7 = 7.4.12, node:22-alpine (app/Dockerfile) = 22.23.5 / Alpine 3.24.4.
 name: c5-cache-stampede
 
 x-app: &app
@@ -23,7 +24,7 @@ x-app: &app
 
 services:
   postgres:
-    image: postgres:16
+    image: postgres:16.16@sha256:3950ad7c3148ca2175ef1b6c36c9efbf78957ae8fbe8b3a5d7c35af50500382f
     command:
       - postgres
       - -c
@@ -34,18 +35,20 @@ services:
       POSTGRES_DB: shop
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      SEED_REVIEWS: "${SEED_REVIEWS:-800000}"
+      SEED_REVIEWS: "${SEED_REVIEWS:-300000}"
     volumes:
       - ./db/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d shop"]
+      # Kiểm qua TCP: trong lúc chạy db/init, image postgres bật server tạm chỉ nghe unix socket,
+      # nên `pg_isready` không có -h sẽ báo ready khi seed còn đang chạy.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres -d shop"]
       interval: 2s
       timeout: 3s
       retries: 30
     cpus: "${PG_CPUS:-2}"   # [calibrate]
 
   redis:
-    image: redis:7
+    image: redis:7.4.12@sha256:2e3eb11462c4e3759e6972678dd051d150ff54b1e60714b3c33b701260172a90
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 2s
