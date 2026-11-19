@@ -1,0 +1,5 @@
+run_id,pair,mode,valid,queries_per_expiry,sum_db_queries_from_headers,p95_ms,p50_ms,max_ms,burst_span_ms,n_ok,n_error,hit_count,miss_query_count,miss_wait_count,miss_fallback_count,invalid_reasons
+20261119T054624Z-plain-1,1,plain,true,200,200,4190.909,2378.561,4381.765,66.481,200,0,0,200,0,0,
+20261119T054634Z-coalesced-1,1,coalesced,true,1,1,134.968,108.051,135.533,26.698,200,0,0,1,199,0,
+20261119T054640Z-coalesced-2,2,coalesced,true,1,1,176.999,124.032,180.305,27.645,200,0,0,1,199,0,
+20261119T054646Z-plain-2,2,plain,true,200,200,4065.926,2370.627,4168.165,43.629,200,0,0,200,0,0,

@@ -1,0 +1,16 @@
+{
+  "case": 14,
+  "name": "Lock: waiter timeout",
+  "pass": true,
+  "expected": "50/50 miss-fallback; log fallback(wait_timeout) = 50; lock_wait_ms ≥ WAIT_TIMEOUT_MS (2000); Σ X-DB-Queries = delta calls",
+  "results": {
+    "miss-fallback": 50
+  },
+  "log_fallback_wait_timeout": 50,
+  "delta_calls": 50,
+  "sum_x_db_queries": 50,
+  "lock_wait_ms": {
+    "min": 2003.025,
+    "max": 2010.533
+  }
+}

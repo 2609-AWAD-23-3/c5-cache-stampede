@@ -1,0 +1,15 @@
+{
+  "case": 10,
+  "name": "Lock: recheck (burst 200 coalesced, tổng query = 1)",
+  "pass": true,
+  "expected": "delta calls = 1, Σ X-DB-Queries = 1",
+  "delta_calls": 1,
+  "sum_x_db_queries": 1,
+  "results": {
+    "miss-wait": 119,
+    "miss-query": 1,
+    "hit": 80
+  },
+  "recheck_hit_events": 1,
+  "note": "Nhánh recheck_hit được kiểm tất định ở app/test/fault.test.mjs; trong burst thật recheck chỉ xảy ra khi holder trước vừa nhả lock."
+}

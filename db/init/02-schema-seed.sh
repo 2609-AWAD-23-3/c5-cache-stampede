@@ -1,8 +1,8 @@
 #!/bin/sh
 # Schema + seed xác định (không dùng random()). Chạy sau 01-*.sql.
-# Số dòng reviews lấy từ biến SEED_REVIEWS (mặc định 800000) để chỉnh độ nặng query.
+# Số dòng reviews lấy từ biến SEED_REVIEWS (mặc định 300000, calibrate trên máy chuẩn 19/11: query p50 33 ms) để chỉnh độ nặng query.
 # Lưu ý: file này được entrypoint của image postgres `source`, nên không dùng `set -u`.
-: "${SEED_REVIEWS:=800000}"
+: "${SEED_REVIEWS:=300000}"
 
 psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" <<SQL
 CREATE TABLE products (

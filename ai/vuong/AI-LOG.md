@@ -39,3 +39,37 @@
   - `EXPLAIN ANALYZE` trên DB rảnh: 65–80 ms mỗi query, cao hơn mục tiêu 20–50 ms (Vỹ đo 34–40 ms trên máy khác ngày 17/11). Đây là việc calibrate `SEED_REVIEWS` của Task 3, chưa chỉnh.
   - Sau khi sửa lỗi Redis: test giả lập lỗi bằng Redis và pool giả (script tạm, không nằm trong repo) 10/10 pass, gồm thứ tự "ghi cache trước, nhả lock sau" ở nhánh recheck lỗi và lock được nhả khi `SET` lỗi. Smoke test trên Docker chạy lại 12/12 pass; coalesced burst 200 vẫn 1 query, 199 `miss-wait`; log không có `redis_error`.
   - Claude tự nhận ra burst trong smoke test bắn bằng `fetch` từ máy Windows không đồng thời thật (plain chỉ ra 2 `miss-query`), nên kết quả burst plain của smoke test không dùng làm bằng chứng; burst thật lấy từ runner của Phúc.
+
+## 2026-11-19 — Merge PR #16 và mở PR contract v1.4 (#17)
+
+- **Tool**: Claude (Claude Code), GitHub CLI.
+- **Asked for**: Kiểm comment trong PR #16; merge PR #16; mở PR contract v1.4 theo bản nháp đã thống nhất.
+- **Kept**: PR #16 có approve của Vỹ và Phúc, không có comment inline; squash merge. PR #17 chỉ sửa câu chữ `CONTRACT.md` (mục 2, 3, 4.5, pilot 20–21/11 ở đầu file và dòng 1.3, thêm dòng 1.4), reviewer Phúc và Vỹ.
+- **Changed**: Thêm vào v1.4 việc sửa dòng lịch sử 1.3 theo nhắc nhở của Vỹ trong review #16.
+- **Rejected**: Gợi ý của Vỹ commit script test vào `app/test/` không làm trong PR #16 mà dời sang Task 3.
+- **By hand**: Vượng quyết định merge và mở PR v1.4.
+- **Kiểm chứng**: `gh pr view` xác nhận trạng thái `MERGED`; `CONTRACT.md` không còn chuỗi "19–21/11".
+
+## 2026-11-19 — Task 3: hạ tầng, calibrate và test lock
+
+- **Tool**: Claude (Claude Code), Docker Desktop.
+- **Asked for**: Làm Task 3 trên máy chuẩn (máy Vượng; máy Vỹ là máy thứ hai). Không commit trước khi Vượng review.
+- **Kept**: Bản Claude làm trên nhánh `feat/task3-infra`, giữ sau khi Vượng review (có sửa, xem Changed):
+  - Pin image theo tag cụ thể + digest: `postgres:16.16`, `redis:7.4.12` (`compose.yaml`), `node:22.23.5-alpine` (`app/Dockerfile`). Kiểm tag cụ thể trùng image với tag trôi đang dùng.
+  - `SEED_REVIEWS` 800000 → 300000 trong `.env.example`, `compose.yaml`, `db/init/02-schema-seed.sh`. Giữ `cpus` mặc định.
+  - `app/test/`: `lib.mjs` (helper), `calibrate-query.mjs` (#9), `lock-tests.mjs` (#10–14), `smoke.mjs`, `fault.test.mjs` (Redis/pool giả, thêm case recheck hit); script `npm` trong `app/package.json`.
+  - Điền checklist #9–14 và mục "Calibrate hạ tầng" trong `docs/PILOT-CHECKLIST.md`; evidence trong `results/calibration/`, `results/calibration-cpus/`, `results/lock-tests/20261119T054509Z/`.
+- **Changed**: Sau review của Vượng, Claude sửa:
+  - Contract: thêm commit `cfdd84e` vào PR #17 (v1.4): `SEED_REVIEWS` 300000 ở mục 5, ví dụ body `review_count` 30000 ở mục 2, ghi chú dòng 1.1 đo trên máy Vỹ; cập nhật title và mô tả PR #17.
+  - `lock-tests.mjs`: mỗi case chạy trong `try/finally`; `restore()` luôn unpause Postgres, xóa key test, tạo lại app1/app2 với env mặc định (kể cả khi app1 bị kill); xử lý Ctrl+C; chạy `restore()` cả trước case đầu; vòng chờ lock hết hạn ở #13 có giới hạn 10 s.
+  - `compose.yaml`: healthcheck Postgres đổi sang TCP (`pg_isready -h 127.0.0.1`).
+  - Chạy lại lock test và runner `PAIRS=2` vào thư mục sạch, xóa evidence cũ bị trùng; cập nhật số trong checklist; ghi chú "đổi seed phải `docker compose down -v`" vào checklist.
+- **Rejected**: Thêm số dòng seed vào `/config` của app (đổi cấu trúc `/config`, phải qua contract); thay vào đó đề nghị Phúc ghi `count(*)` vào `config.json` của runner và ghi chú `down -v` trong README (file của Phúc).
+- **By hand**: Vượng chốt máy chuẩn là máy mình, máy Vỹ là máy dự phòng. Vượng tự review bản Task 3 và nêu 4 điểm: (1) contract (cả PR #17) vẫn ghi `SEED_REVIEWS=800000`, dòng 1.1 cần ghi đo trên máy Vỹ; (2) `lock-tests.mjs` không dọn dẹp khi lỗi giữa chừng (app kẹt `LOCK_LEASE_MS=10` hoặc Postgres còn `pause`, mà `/config` hai instance vẫn khớp nên runner không phát hiện); (3) đổi seed không áp dụng lên DB đã có vì anonymous volume được giữ khi tạo lại container, `/config` không báo số dòng seed; (4) evidence `results/calibration-cpus/` bị trùng pair 1. Vượng đồng ý hướng sửa Claude đề xuất.
+- **Kiểm chứng**:
+  - Query đơn lẻ qua app (n=30, plain): seed 800000 p50 84.9 / p90 119.2 ms (không đạt); 400000 p50 38.8 / p90 48.1; 350000 p50 33.1 / p90 41.8; 300000 p50 32.9 / p90 39.2 / max 49.2 ms. Chọn 300000.
+  - Runner `PAIRS=2` (thư mục sạch), seed 300000, `cpus` mặc định: 4/4 lượt hợp lệ, không còn cảnh báo trùng; plain 200 query, p95 4066–4191 ms; coalesced 1 query, p95 135–177 ms; `burst_span_ms` 27–66. (Lần đầu chạy `PAIRS=1` rồi `PAIRS=2` chung thư mục, 6/6 hợp lệ nhưng pair 1 bị trùng; đã xóa.)
+  - `npm run test:lock` (bản có `try/finally`): #10–14 pass. #10: 1 query, có 1 `recheck_hit` thật. #12 (`LOCK_LEASE_MS=10`): 3 query, 3 `lock_not_owned`. #13 (SIGKILL holder): 10 waiter `miss-fallback` sau 2000.5–2008.3 ms, request sau lease `miss-query`. #14 (lock giả): 50/50 `miss-fallback`, log và header khớp delta `calls`. Sau khi chạy xong, `/config` của app1 trả `lock_lease_ms` 5000 (đã về mặc định). Chưa thử trường hợp case ném lỗi giữa chừng hoặc Ctrl+C.
+  - Kiểm điểm 3 của Vượng bằng thực nghiệm: đổi `SEED_REVIEWS=50000` rồi `up` thì bảng vẫn 300000 dòng (cùng volume); `down` rồi `up` thì 50000 dòng (volume mới). Lúc kiểm, phát hiện thêm Postgres báo healthy khi seed chưa xong (`count(*) = 0`); sau khi đổi healthcheck sang TCP, ngay khi healthy đã đủ 300000 dòng.
+  - `npm test` 11/11, `npm run test:smoke` 13/13.
+  - Lần chạy lock test đầu: script tái dùng socket keep-alive tới container đã bị tạo lại (`ECONNRESET`), sửa bằng `resetAgent()`. Lần hai: #11 báo FAIL sai vì một holder gặp `recheck_hit` hợp lệ không có `cache_set`; sửa điều kiện kiểm trong script, không sửa service.

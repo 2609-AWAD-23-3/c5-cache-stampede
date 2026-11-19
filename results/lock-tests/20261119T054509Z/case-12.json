@@ -1,0 +1,96 @@
+{
+  "case": 12,
+  "name": "Lock: lease (10 ms) < thời gian query",
+  "pass": true,
+  "expected": "queries > 1; holder có lease hết hạn gặp lock_not_owned (Lua không xóa lock của holder khác); Σ X-DB-Queries = delta calls",
+  "lock_lease_ms": 10,
+  "delta_calls": 3,
+  "sum_x_db_queries": 3,
+  "results": {
+    "miss-query": 3,
+    "miss-wait": 197
+  },
+  "lock_acquired": 3,
+  "lock_released": 0,
+  "lock_not_owned": 3,
+  "log_events": [
+    {
+      "ts": 1795067133108,
+      "instance": "app1",
+      "event": "lock_acquired",
+      "token": "1489c6f3-518d-4ae6-aa6c-add74119f19d",
+      "request_id": "c12-0",
+      "product_id": 1,
+      "mode": "coalesced"
+    },
+    {
+      "ts": 1795067133120,
+      "instance": "app2",
+      "event": "lock_acquired",
+      "token": "361fec56-638b-4068-80f4-3f821c9ecab3",
+      "request_id": "c12-7",
+      "product_id": 1,
+      "mode": "coalesced"
+    },
+    {
+      "ts": 1795067133126,
+      "instance": "app2",
+      "event": "lock_acquired",
+      "token": "430231c4-cf42-495c-9d9d-d3e0b3adf6b3",
+      "request_id": "c12-55",
+      "product_id": 1,
+      "mode": "coalesced"
+    },
+    {
+      "ts": 1795067133155,
+      "instance": "app1",
+      "event": "cache_set",
+      "request_id": "c12-0",
+      "product_id": 1,
+      "mode": "coalesced"
+    },
+    {
+      "ts": 1795067133156,
+      "instance": "app1",
+      "event": "lock_not_owned",
+      "token": "1489c6f3-518d-4ae6-aa6c-add74119f19d",
+      "request_id": "c12-0",
+      "product_id": 1,
+      "mode": "coalesced"
+    },
+    {
+      "ts": 1795067133174,
+      "instance": "app2",
+      "event": "cache_set",
+      "request_id": "c12-7",
+      "product_id": 1,
+      "mode": "coalesced"
+    },
+    {
+      "ts": 1795067133183,
+      "instance": "app2",
+      "event": "lock_not_owned",
+      "token": "361fec56-638b-4068-80f4-3f821c9ecab3",
+      "request_id": "c12-7",
+      "product_id": 1,
+      "mode": "coalesced"
+    },
+    {
+      "ts": 1795067133234,
+      "instance": "app2",
+      "event": "cache_set",
+      "request_id": "c12-55",
+      "product_id": 1,
+      "mode": "coalesced"
+    },
+    {
+      "ts": 1795067133235,
+      "instance": "app2",
+      "event": "lock_not_owned",
+      "token": "430231c4-cf42-495c-9d9d-d3e0b3adf6b3",
+      "request_id": "c12-55",
+      "product_id": 1,
+      "mode": "coalesced"
+    }
+  ]
+}
