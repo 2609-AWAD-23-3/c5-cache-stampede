@@ -1,4 +1,4 @@
-# CONTRACT — service ↔ runner (v1.3, 18/11/2026)
+# CONTRACT — service ↔ runner (v1.4, 19/11/2026)
 
 File này là nguồn sự thật duy nhất giữa `app/` (Vượng) và `benchmark/` (Phúc). Muốn đổi bất kỳ điều gì: sửa file này trong một PR, cả hai người cùng approve, tăng version ở dòng đầu. Vỹ giữ file.
 
@@ -6,7 +6,7 @@ Câu hỏi nghiên cứu (không sửa chữ):
 
 > When a hot cache key expires under 200 concurrent requests, how many Postgres queries does request coalescing with a Redis lock save compared with plain cache-aside (queries per expiry), and how much does it add to p95 latency (ms)?
 
-Giá trị đánh dấu `[calibrate]` được hiệu chỉnh trong pilot (19–21/11), rồi **đóng băng** trước khi chạy official và ghi vào `REPORT.md`.
+Giá trị đánh dấu `[calibrate]` được hiệu chỉnh trong pilot (20–21/11), rồi **đóng băng** trước khi chạy official và ghi vào `REPORT.md`.
 
 ---
 
@@ -29,11 +29,11 @@ Cùng image, cùng seed, cùng cấu hình cho hai mode. Hai mode chỉ khác nh
 - Hot product: `id=1`.
 - Request header:
   - `X-Cache-Mode: plain | coalesced` (bắt buộc; thiếu hoặc sai thì `400`).
-  - `X-Request-Id: <run_id>-<seq>` (runner gán; app echo lại vào log).
+  - `X-Request-Id: <run_id>-<seq>` (runner gán; app ghi vào log khi có lỗi hoặc sự kiện lock/fallback. App không log từng request để không ảnh hưởng latency; dữ liệu từng request nằm ở `requests.jsonl` của runner).
 - Response `200`, `Content-Type: application/json`. Body **byte-identical** giữa hai mode với cùng product (runner so SHA-256 của body):
 
 ```json
-{"id":1,"name":"Product 1","price_cents":1999,"review_count":80000,"avg_rating":3}
+{"id":1,"name":"Product 1","price_cents":1999,"review_count":30000,"avg_rating":3}
 ```
 
 - Thứ tự key và định dạng số phải ổn định. Không nhúng timestamp, instance hay mode vào body.
@@ -110,7 +110,7 @@ GROUP BY p.id
 ```
 
 - `reviews.product_id` **không có index** có chủ đích, để chi phí query ổn định và đủ nặng (mục tiêu 20–50 ms `[calibrate]`). Chỉnh độ nặng bằng số dòng seed (`SEED_REVIEWS`), không bằng cách thêm `pg_sleep`.
-- App gọi query này qua `pool.query(sql, [id])` đúng một chỗ, không có query target nào khác trong luồng `GET /products/:id`.
+- App lấy connection từ pool rồi chạy query này với tham số `[id]` ở đúng một chỗ (tách bước lấy connection để đo `X-Pool-Wait-Ms`; cả hai mode dùng chung chỗ này), không có query target nào khác trong luồng `GET /products/:id`.
 
 ### Runner đọc query stats
 
@@ -137,7 +137,7 @@ Không recheck, không lock.
    3. `SET cache ... PX CACHE_TTL_MS`.
    4. **Sau khi ghi cache xong** mới nhả lock bằng Lua compare-and-delete (chỉ xóa nếu giá trị = token của mình). Trả (`miss-query`).
 4. **Không lấy được lock (waiter):** lặp mỗi `WAIT_POLL_MS`: `GET` cache; có thì trả (`miss-wait`). Quá `WAIT_TIMEOUT_MS` thì tự query Postgres, ghi cache, trả (`miss-fallback`).
-5. Lỗi Redis khi lock/poll: coi như fallback, log lỗi, **không** nuốt im lặng.
+5. Lỗi Redis ở `coalesced` (GET cache, lock, recheck, poll): coi như fallback, log lỗi, **không** nuốt im lặng. Request đã query mà `SET` cache lỗi vẫn trả body kèm `X-DB-Queries` (`coalesced`: `miss-fallback`; `plain`: `miss-query`), để Σ `X-DB-Queries` luôn khớp delta `calls`.
 
 Lua release:
 
@@ -159,7 +159,7 @@ Lock chỉ đúng với single-node Redis; không phải Redlock. Ghi vào limit
 | --- | --- | --- | --- |
 | `CACHE_TTL_MS` | 3000 | chung | `[calibrate]` phải dài hơn thời gian burst |
 | `PG_POOL_MAX` | 10 | chung | mỗi instance |
-| `SEED_REVIEWS` | 800000 | chung | `[calibrate]` chỉnh độ nặng query |
+| `SEED_REVIEWS` | 300000 | chung | `[calibrate]` chỉnh độ nặng query; đo trên máy chuẩn (máy Vượng) 19/11: p50 33 ms, p90 39 ms |
 | `LOCK_LEASE_MS` | 5000 | riêng coalesced | phải lớn hơn thời gian query |
 | `WAIT_POLL_MS` | 5 | riêng coalesced | cố định, không jitter |
 | `WAIT_TIMEOUT_MS` | 2000 | riêng coalesced | hết thì fallback |
@@ -237,6 +237,7 @@ Xem bảng checklist trong `docs/PILOT-CHECKLIST.md`. Contract coi là "đạt" 
 | Version | Ngày | Thay đổi |
 | --- | --- | --- |
 | 1.0 | 17/11/2026 | Bản đầu, theo quyết định D1–D12. |
-| 1.1 | 17/11/2026 | Theo review của Codex: (1) `/config` tách metadata (`instance`, `port`) khỏi `params` cần khớp; (2) fallback và query lặp ở coalesced giữ trong median chính, không còn là lý do loại lượt; (3) bỏ ngưỡng "plain gần 200 query". `SEED_REVIEWS` = 800000 sau khi đo query 34–40 ms. |
+| 1.1 | 17/11/2026 | Theo review của Codex: (1) `/config` tách metadata (`instance`, `port`) khỏi `params` cần khớp; (2) fallback và query lặp ở coalesced giữ trong median chính, không còn là lý do loại lượt; (3) bỏ ngưỡng "plain gần 200 query". `SEED_REVIEWS` = 800000 sau khi đo query 34–40 ms (đo trên máy Vỹ; máy chuẩn sau đó chốt là máy Vượng, xem 1.4). |
 | 1.2 | 18/11/2026 | Theo đề xuất của Phúc ở issue #1: `summary.csv` và `report_table.md` được ghi vào `results/<kind>/` (pilot và official), không chỉ `results/official/`; làm rõ runner (Task 4) ghi dữ liệu từng lượt và gọi aggregate (Task 6) ở cuối lệnh. |
-| 1.3 | 18/11/2026 | Rút lịch: bản final xong 25/11 (hạn nộp chính thức 29/11 là dự phòng); pilot 19–21/11, đóng băng trước 22/11, official 22/11. Thêm phương án dự phòng 6 cặp ở mục 6 (theo review của Vượng). Không đổi API, định dạng log hay quy tắc đo. |
+| 1.3 | 18/11/2026 | Rút lịch: bản final xong 25/11 (hạn nộp chính thức 29/11 là dự phòng); pilot 20–21/11, đóng băng trước 22/11, official 22/11. Thêm phương án dự phòng 6 cặp ở mục 6 (theo review của Vượng). Không đổi API, định dạng log hay quy tắc đo. |
+| 1.4 | 19/11/2026 | Sửa câu chữ cho khớp code Task 2 (#16), theo review của Vượng và Vỹ: cách gọi query (tách bước lấy connection để đo pool wait, mục 3), phạm vi log `X-Request-Id` (mục 2), xử lý lỗi Redis (mục 4.5); pilot 20–21/11 ở đầu file và dòng 1.3. Calibrate hạ tầng (Task 3) trên máy chuẩn là máy Vượng: `SEED_REVIEWS` 800000 → 300000 vì 800000 cho query p50 85 ms (ngoài 20–50 ms); theo review của Vượng về bản Task 3: ví dụ body đổi `review_count` 80000 → 30000, ghi chú dòng 1.1 đo trên máy Vỹ. Không đổi API, định dạng log hay quy tắc đo. |
