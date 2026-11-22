@@ -76,6 +76,20 @@ Log của Phúc cho phần việc của mình: xác nhận contract (Task 1) và
   - `node benchmark/src/aggregate.js results/pilot-r1`: exit 0; `node app/test/smoke.mjs`: `ALL PASS`.
   - `results/pilot/` chỉ còn duy nhất `.gitkeep`.
 
+## 2026-11-23 — Task 8 (và review PR #21, #22): Điền môi trường đo trong README và mục 4 Kết quả trong REPORT
+
+- **Tool**: Antigravity, GitHub CLI (`gh`), Node.js.
+- **Asked for**: Kiểm tra PR #21 (official 10 cặp) & PR #22 (crosscheck Task 6), sau đó thực hiện phần việc của Phúc trong Task 8 (điền mục `Môi trường đo chính thức` ở `README.md` và viết mục `4. Kết quả` ở `REPORT.md`) trên nhánh riêng.
+- **Kept**:
+  - `README.md`: bổ sung đầy đủ thông số máy chuẩn, OS/Docker/Compose, image tags+digest, cấu hình `[calibrate]` đóng băng, commit `3682b13`, ghi chú nguồn `seed_reviews_count` (`pg_class.reltuples` ở `3682b13` vs `count(*)` từ `8e97ebd`), và các quy ước tổng hợp của `benchmark/src/aggregate.js`.
+  - `REPORT.md`: điền mục `4. Kết quả` với bảng `median (min–max)` qua 10 cặp official (`queries_saved = 199 (114–199)`, `median_of_pair_delta_p95_ms = −3696.122 (−4353.170 đến −1863.389) ms`, `0` fallback), phân tích spread `115–200` của `plain`, nguyên nhân `pool_wait_ms`/`query_ms`/`lock_wait_ms` và lưu ý `burst_span_ms` max `98.135 ms`.
+- **Changed**: Giữ nguyên toàn bộ các mục còn lại trong `REPORT.md` (mục 1, 2, 3, 5, 6, 7 thuộc phần của Vượng và Vỹ) để không xung đột quyền sở hữu file.
+- **Rejected**: Không tự đóng `Issue #10` (`Refs #10` thay vì `Closes #10`) vì Task 8 còn phần của Vượng và Vỹ.
+- **By hand**: Phúc kiểm tra phân tích log của PR #22, duyệt phản hồi review Approve cho PR #22, và xác nhận kế hoạch thực hiện Task 8 trước khi tạo nhánh `docs/task8-results-readme`.
+- **Kiểm chứng**:
+  - Chạy `node benchmark/src/aggregate.js results/official`: exit 0, đối chiếu khớp toàn bộ con số trong `REPORT.md` với `results/official/report_table.md` và `results/official/*/config.json`.
+  - Kiểm `git diff --stat`: chỉ sửa 3 file `README.md`, `REPORT.md`, `ai/phuc/AI-LOG.md`.
+
 ## Lỗi assistant / vấn đề phát hiện trong quá trình làm
 
 | # | Lỗi / Vấn đề | Assistant | Cách phát hiện | Cách sửa |
