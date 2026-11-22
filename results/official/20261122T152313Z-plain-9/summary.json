@@ -1,0 +1,32 @@
+{
+  "mode": "plain",
+  "pair": 9,
+  "attempt": 1,
+  "run_id": "20261122T152313Z-plain-9",
+  "queries_per_expiry": 200,
+  "sum_db_queries_from_headers": 200,
+  "p95_ms": 4027.221,
+  "p50_ms": 1944.089,
+  "max_ms": 4041.64,
+  "min_ms": 140.293,
+  "n_ok": 200,
+  "n_error": 0,
+  "burst_span_ms": 24.42,
+  "expiry_confirmed": true,
+  "expiry_confirmed_ts": 1795360996704.362,
+  "burst_start_ts": 1795360996704.427,
+  "hit_count": 0,
+  "miss_query_count": 200,
+  "miss_wait_count": 0,
+  "miss_fallback_count": 0,
+  "hit_rate": 0,
+  "median_lock_wait_ms": 0,
+  "median_pool_wait_ms": 1605.419,
+  "median_query_ms": 389.599,
+  "instance_counts": {
+    "app1": 100,
+    "app2": 100
+  },
+  "valid": true,
+  "invalid_reasons": []
+}

@@ -28,4 +28,6 @@ FROM generate_series(1, ${SEED_REVIEWS}) AS g;
 ANALYZE;
 
 GRANT SELECT ON products, reviews TO app_user;
+-- Runner (bench_ro) đếm số dòng seed bằng count(*) để ghi vào config.json (xem benchmark/src/stats.js).
+GRANT SELECT ON reviews TO bench_ro;
 SQL
