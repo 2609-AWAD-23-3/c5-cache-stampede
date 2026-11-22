@@ -1,4 +1,4 @@
-# CONTRACT — service ↔ runner (v1.4, 19/11/2026)
+# CONTRACT — service ↔ runner (v1.5, 22/11/2026)
 
 File này là nguồn sự thật duy nhất giữa `app/` (Vượng) và `benchmark/` (Phúc). Muốn đổi bất kỳ điều gì: sửa file này trong một PR, cả hai người cùng approve, tăng version ở dòng đầu. Vỹ giữ file.
 
@@ -157,7 +157,7 @@ Lock chỉ đúng với single-node Redis; không phải Redlock. Ghi vào limit
 
 | Biến | Mặc định | Nhóm | Ghi chú |
 | --- | --- | --- | --- |
-| `CACHE_TTL_MS` | 3000 | chung | `[calibrate]` phải dài hơn thời gian burst |
+| `CACHE_TTL_MS` | 3000 | chung | `[calibrate]` phải dài hơn thời gian gửi hết 200 request (`burst_span_ms`, tối đa 100 ms); không cần dài hơn thời gian chờ xong của plain (p95 vài giây), vì lúc đó không còn request nào đọc cache |
 | `PG_POOL_MAX` | 10 | chung | mỗi instance |
 | `SEED_REVIEWS` | 300000 | chung | `[calibrate]` chỉnh độ nặng query; đo trên máy chuẩn (máy Vượng) 19/11: p50 33 ms, p90 39 ms |
 | `LOCK_LEASE_MS` | 5000 | riêng coalesced | phải lớn hơn thời gian query |
@@ -241,3 +241,4 @@ Xem bảng checklist trong `docs/PILOT-CHECKLIST.md`. Contract coi là "đạt" 
 | 1.2 | 18/11/2026 | Theo đề xuất của Phúc ở issue #1: `summary.csv` và `report_table.md` được ghi vào `results/<kind>/` (pilot và official), không chỉ `results/official/`; làm rõ runner (Task 4) ghi dữ liệu từng lượt và gọi aggregate (Task 6) ở cuối lệnh. |
 | 1.3 | 18/11/2026 | Rút lịch: bản final xong 25/11 (hạn nộp chính thức 29/11 là dự phòng); pilot 20–21/11, đóng băng trước 22/11, official 22/11. Thêm phương án dự phòng 6 cặp ở mục 6 (theo review của Vượng). Không đổi API, định dạng log hay quy tắc đo. |
 | 1.4 | 19/11/2026 | Sửa câu chữ cho khớp code Task 2 (#16), theo review của Vượng và Vỹ: cách gọi query (tách bước lấy connection để đo pool wait, mục 3), phạm vi log `X-Request-Id` (mục 2), xử lý lỗi Redis (mục 4.5); pilot 20–21/11 ở đầu file và dòng 1.3. Calibrate hạ tầng (Task 3) trên máy chuẩn là máy Vượng: `SEED_REVIEWS` 800000 → 300000 vì 800000 cho query p50 85 ms (ngoài 20–50 ms); theo review của Vượng về bản Task 3: ví dụ body đổi `review_count` 80000 → 30000, ghi chú dòng 1.1 đo trên máy Vỹ. Không đổi API, định dạng log hay quy tắc đo. |
+| 1.5 | 22/11/2026 | Làm rõ `CACHE_TTL_MS` ở mục 5: "thời gian burst" nghĩa là thời gian gửi hết 200 request (`burst_span_ms`), không phải thời gian chờ xong của plain (p95 ~4 s trên máy chuẩn, đã đo ở Task 3). Giữ `CACHE_TTL_MS` = 3000. Không đổi API, định dạng log hay quy tắc đo. |
