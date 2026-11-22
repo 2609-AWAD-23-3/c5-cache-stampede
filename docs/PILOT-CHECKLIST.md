@@ -2,26 +2,26 @@
 
 Service và runner xong 20/11 nên pilot thực tế chạy 20–21/11. Hạ tầng (`SEED_REVIEWS`, `cpus`) calibrate xong 20/11 (Task 3); các giá trị `[calibrate]` khác (`CACHE_TTL_MS`, lease, poll…) chốt trong pilot rồi đóng băng trước 22/11.
 
-Điền kết quả và đường dẫn tới `results/pilot/<run_id>/` cho mỗi dòng. Chỉ khi tất cả pass mới đóng băng các giá trị `[calibrate]` và chạy official.
+Điền kết quả và đường dẫn tới `results/pilot-r1/<run_id>/` cho mỗi dòng. Chỉ khi tất cả pass mới đóng băng các giá trị `[calibrate]` và chạy official.
 
 | # | Kiểm tra | Kỳ vọng | Kết quả | Evidence |
 | --- | --- | --- | --- | --- |
-| 1 | Cache hit | `X-DB-Queries=0`, delta `calls`=0 | | |
-| 2 | Một request sau expiry | `X-DB-Queries=1`, delta `calls`=1 | | |
-| 3 | Payload hai mode | `payload_sha256` giống nhau | | |
-| 4 | `/config` hai instance | `params`, `node_version`, `git_commit` trùng nhau; `instance`, `port` được phép khác | | |
-| 5 | Burst | đủ 200 request, `burst_span_ms` ≤ 100, cả hai instance nhận request | | |
-| 6 | Plain, 5 lượt | Key hết hạn thật, burst chồng lấn, payload khớp, hai nguồn đếm query khớp. `queries_per_expiry` (1–200) **chỉ ghi nhận**, không có ngưỡng đạt/trượt | | |
-| 7 | Coalesced, 5 lượt | Dự kiến `queries_per_expiry` = 1. Nếu > 1 hoặc có `miss-fallback`: điều tra nguyên nhân và ghi lại, không coi là trượt pilot | | |
-| 8 | Kiểm chéo | `Σ X-DB-Queries` = delta `calls` ở mọi lượt | | |
+| 1 | Cache hit | `X-DB-Queries=0`, delta `calls`=0 | **Pass** (smoke test, 22/11). Cả `plain` và `coalesced`: hit trả `X-DB-Queries=0`, delta `calls=0` | `app/test/smoke.mjs` (đã chạy trên stack thật) |
+| 2 | Một request sau expiry | `X-DB-Queries=1`, delta `calls`=1 | **Pass** (smoke test, 22/11). Chờ `EXISTS=0` tự nhiên rồi gọi 1 request ở cả hai mode: `X-DB-Queries=1`, delta `calls=1` | `app/test/smoke.mjs` |
+| 3 | Payload hai mode | `payload_sha256` giống nhau | **Pass**. Mọi request `status=200` cả 10 lượt khớp SHA-256 `7a93a0a012dc45fc5635a4eae1f65b8ea690dbdf42f2497dfe1d162e662cbc3b` (`review_count=30000`) | `results/pilot-r1/summary.csv`, `results/pilot-r1/20261122T091044Z-plain-1/config.json` |
+| 4 | `/config` hai instance | `params`, `node_version`, `git_commit` trùng nhau; `instance`, `port` được phép khác | **Pass**. `app1` và `app2` khớp toàn bộ `params`, `node_version` (`v22.23.5`), `git_commit`; khác metadata `instance`/`port` | `results/pilot-r1/20261122T091052Z-coalesced-1/config.json` |
+| 5 | Burst | đủ 200 request, `burst_span_ms` ≤ 100, cả hai instance nhận request | **Pass**. Cả 10 lượt đủ `n_ok=200`, `n_error=0`, chia đều `app1: 100` và `app2: 100`; `burst_span_ms` 5.183–33.938 ms (≤ 100 ms) | `results/pilot-r1/report_table.md`, `results/pilot-r1/*/summary.json` |
+| 6 | Plain, 5 lượt | Key hết hạn thật, burst chồng lấn, payload khớp, hai nguồn đếm query khớp. `queries_per_expiry` (1–200) **chỉ ghi nhận**, không có ngưỡng đạt/trượt | **Pass** (5/5 lượt hợp lệ, máy Phúc i5-12500H). `queries_per_expiry` = **200** (200–200), `p50` = 1027.155 (840.404–1110.883) ms, `p95` = 1820.438 (1643.611–1995.993) ms, `burst_span_ms` = 11.266 (7.551–33.938) ms | `results/pilot-r1/report_table.md`, `results/pilot-r1/summary.csv` |
+| 7 | Coalesced, 5 lượt | Dự kiến `queries_per_expiry` = 1. Nếu > 1 hoặc có `miss-fallback`: điều tra nguyên nhân và ghi lại, không coi là trượt pilot | **Pass** (5/5 lượt hợp lệ, máy Phúc i5-12500H). `queries_per_expiry` = **1** (1–1), 0 `miss-fallback`, 199 `miss-wait`, `p50` = 31.647 (30.969–71.089) ms, `p95` = 41.825 (39.255–82.684) ms (`delta_p95_ms` median -1762.677 ms) | `results/pilot-r1/report_table.md`, `results/pilot-r1/summary.csv` |
+| 8 | Kiểm chéo | `Σ X-DB-Queries` = delta `calls` ở mọi lượt | **Pass**. Cả 10/10 lượt: 5 lượt `plain` khớp `200=200`, 5 lượt `coalesced` khớp `1=1`; `node benchmark/src/aggregate.js results/pilot-r1` kiểm tra lại khớp `summary.json` (exit 0) | `results/pilot-r1/summary.csv`, `results/pilot-r1/*/snapshots/*.json` |
 | 9 | Độ nặng query | thời gian query đơn lẻ trong 20–50 ms; ghi con số thật | **Pass** (máy chuẩn, 19/11). `SEED_REVIEWS=800000` không đạt: p50 84.9 ms, p90 119.2 ms. Chọn **300000**: `X-Query-Ms` p50 32.9, p90 39.2, min 23.8, max 49.2 ms (n=30); `EXPLAIN ANALYZE` 26.7–43.1 ms | `results/calibration/20261119T051447Z-seed300000.json` (các mức 800k/400k/350k cùng thư mục) |
 | 10 | Lock: recheck | tổng query = 1 | **Pass**. Burst 200 coalesced: delta `calls` = 1, Σ `X-DB-Queries` = 1 (1 `miss-query`, 119 `miss-wait`, 80 `hit`). Có 1 holder thứ hai gặp `recheck_hit` thật (0 query, vẫn nhả lock); nhánh này còn được kiểm tất định ở `app/test/fault.test.mjs` | `results/lock-tests/20261119T054509Z/case-10.json` |
 | 11 | Lock: thứ tự | log `SET cache` trước `DEL lock` | **Pass**. Log holder: `lock_acquired` → `cache_set` → `lock_released`; đúng 1 holder ghi cache; holder gặp `recheck_hit` nhả lock mà không ghi | `results/lock-tests/20261119T054509Z/case-11.json` |
 | 12 | Lock: lease < thời gian query (test chủ ý) | thấy `queries>1`; lock của holder mới không bị xóa nhầm | **Pass**. `LOCK_LEASE_MS=10`: 3 query, 3 holder, cả 3 nhận `lock_not_owned` (Lua không xóa lock của holder khác), 0 `lock_released`; Σ header = delta `calls` = 3 | `results/lock-tests/20261119T054509Z/case-12.json` |
 | 13 | Lock: giết holder (test chủ ý) | waiter phục hồi sau lease hoặc fallback, có log | **Pass**. Holder ở app1 bị `SIGKILL` khi đang query (Postgres tạm `pause`); 10 waiter ở app2 `miss-fallback` sau 2000.5–2008.3 ms (mỗi waiter 1 query); lock của holder chết tự hết sau 2.6 s; request mới sau đó `miss-query` | `results/lock-tests/20261119T054509Z/case-13.json` |
 | 14 | Lock: waiter timeout (test chủ ý) | `miss-fallback` được đếm đúng | **Pass**. Lock giả giữ 15 s: 50/50 `miss-fallback`, 50 log `fallback(wait_timeout)`, delta `calls` = Σ header = 50, `lock_wait_ms` 2003.0–2010.5 | `results/lock-tests/20261119T054509Z/case-14.json` |
-| 15 | Fresh clone | làm theo `README.md` trong thư mục mới, `PAIRS=1`, cùng format output | | |
-| 16 | Poll interval | `lock_wait_ms` của waiter ≈ thời gian query của holder + tối đa 5 ms | | |
+| 15 | Fresh clone | làm theo `README.md` trong thư mục mới, `PAIRS=1`, cùng format output | **Pass** (máy Vỹ i7-12700H, 20/11, commit `4dcb0b3`, `PAIRS=1`): 2/2 lượt `VALID` (`plain`: 186 query, `p95=1750.264 ms`; `coalesced`: 1 query, `p95=37.233 ms`). Ghi chú: lần chạy trên máy Phúc (`PAIRS=5`, 22/11) là chạy kiểm chứng từ volume sạch trên nhánh phát triển `feat/task5-pilot` (không phải fresh clone; 10/10 lượt `VALID`, `seed_reviews_count=300000`) | Issue #5 (comment của `@tranquocvy`); `results/pilot-r1/` |
+| 16 | Poll interval | `lock_wait_ms` của waiter ≈ thời gian query của holder + tối đa 5 ms | **Pass** (5 lượt coalesced `pilot-r1`). Holder `X-Query-Ms` = 10.039–23.769 ms (`duration_ms` tổng của holder gồm pool/Redis/set cache = 22.828–54.610 ms); waiter `lock_wait_ms` = 5.678–35.235 ms (nằm trong thời gian giữ lock đến khi holder ghi xong cache + `WAIT_POLL_MS=5 ms` và chi phí lập lịch) | `results/pilot-r1/20261122T091052Z-coalesced-1/requests.jsonl` (và 4 lượt coalesced còn lại) |
 
 Không chỉnh `SEED_REVIEWS`, burst hay TTL để plain "gần 200" hoặc để coalesced "đẹp hơn". Chỉ chỉnh khi mục #5 (burst chồng lấn) hoặc #9 (độ nặng query) không đạt, và ghi lý do vào log pilot.
 
@@ -36,3 +36,9 @@ Không chỉnh `SEED_REVIEWS`, burst hay TTL để plain "gần 200" hoặc đ�
 - Chạy lại: `cd app && npm run calibrate` (#9), `npm run test:lock` (#10–14), `npm test` (nhánh lỗi, không cần Docker), `npm run test:smoke`.
 - **Đổi seed phải dựng lại DB** (Vượng phát hiện khi review bản Task 3): Postgres dùng anonymous volume và Compose giữ volume đó khi tạo lại container, nên đổi `SEED_REVIEWS` rồi `docker compose up` vẫn dùng DB cũ (đã kiểm: đổi sang 50000 rồi `up`, bảng vẫn 300000 dòng). Đổi seed thì chạy `docker compose down -v` trước.
 - **Healthcheck Postgres qua TCP** (`pg_isready -h 127.0.0.1`; Claude phát hiện khi kiểm điểm trên của Vượng): trước đây Postgres báo healthy khi `db/init` còn đang seed (đã thấy `count(*) = 0` ngay sau healthy); sau khi sửa, ngay khi healthy đã có đủ 300000 dòng.
+
+## Kết quả Pilot (`PAIRS=5`, `RESULTS_KIND=pilot-r1`, máy Phúc, 22/11/2026)
+
+- **Máy chạy pilot:** Intel Core i5-12500H (16 luồng trong WSL2, RAM cấp cho WSL2 4918 MB), Docker Engine 28.5.1, `node:22.23.5-alpine`, `postgres:16.16`, `redis:7.4.12`, `SEED_REVIEWS=300000`, `CACHE_TTL_MS=3000`.
+- **Tổng hợp 5 cặp (10/10 lượt `VALID`):** `queries_saved` = **199** (199–199) queries/expiry; `plain` `p95` median = **1820.438** (1643.611–1995.993) ms; `coalesced` `p95` median = **41.825** (39.255–82.684) ms; `delta_p95_ms` median = **-1762.677** (-1956.738–-1598.673) ms; `miss-fallback` = 0.
+- **Chốt TTL:** Giữ nguyên `CACHE_TTL_MS=3000` (theo `CONTRACT.md` v1.5 / PR #20): `CACHE_TTL_MS` chỉ cần dài hơn `burst_span_ms` (≤ 100 ms), không cần dài hơn thời gian chờ xong của `plain`. `results/pilot/` được giữ trống (chỉ có `.gitkeep`) để Task 7 fresh clone chạy `PAIRS=1` mặc định không bị gộp trùng với `pilot-r1`.

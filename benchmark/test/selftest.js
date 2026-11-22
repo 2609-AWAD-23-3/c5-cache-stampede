@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 import { computeRunSummary, nearestRankPercentile, recomputeAndAggregateDir } from '../src/aggregate.js';
 import { runBenchmark } from '../src/run.js';
 
-const CANONICAL_BODY = '{"id":1,"name":"Product 1","price_cents":1999,"review_count":80000,"avg_rating":3}';
+const CANONICAL_BODY = '{"id":1,"name":"Product 1","price_cents":1999,"review_count":30000,"avg_rating":3}';
 const CANONICAL_SHA = crypto.createHash('sha256').update(CANONICAL_BODY).digest('hex');
 
 function parseRespCommands(buffer) {
@@ -193,6 +193,11 @@ function createMockPgServer(pgStats) {
                 : [];
             const cmdComplete = buildPgMessage('C', Buffer.from(`SELECT ${rows.length}\0`, 'utf8'));
             socket.write(Buffer.concat([rowDesc, ...rows, cmdComplete, readyForQuery]));
+          } else if (sql.includes('FROM reviews') || sql.includes('pg_stat_user_tables')) {
+            const rowDesc = buildRowDescription([{ name: 'cnt', oid: 23, size: 4 }]);
+            const dataRow = buildDataRow(['300000']);
+            const cmdComplete = buildPgMessage('C', Buffer.from('SELECT 1\0', 'utf8'));
+            socket.write(Buffer.concat([rowDesc, dataRow, cmdComplete, readyForQuery]));
           } else {
             const rowDesc = buildRowDescription([{ name: '?column?', oid: 23, size: 4 }]);
             const dataRow = buildDataRow(['1']);
@@ -472,6 +477,7 @@ async function runTests() {
 
       const runDir = path.join(t2Dir, 'pilot', s.run_id);
       const cfg = JSON.parse(fs.readFileSync(path.join(runDir, 'config.json'), 'utf8'));
+      assert.equal(cfg.seed_reviews_count, 300000);
       assert.equal(cfg.client_headers_timeout_ms, 10000);
       assert.equal(cfg.client_body_timeout_ms, 10000);
       assert.ok(cfg.runner.cpu_count > 0);

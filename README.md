@@ -25,7 +25,9 @@ docker compose run --rm benchmark
 
 Lệnh cuối tự dựng và chờ `postgres`, `redis`, `app1`, `app2` healthy, rồi chạy benchmark và in bảng kết quả. Raw output nằm ở `results/<RESULTS_KIND>/<run_id>/`.
 
-> **Trạng thái hiện tại:** repo mới có khung. `app/` và `benchmark/` là stub nên lệnh trên chưa chạy được benchmark. Đã kiểm hoạt động: `docker compose up -d --wait postgres redis` (seed, role, `pg_stat_statements`). README được cập nhật khi Task 2–5 xong và được kiểm bằng fresh clone.
+> **Lưu ý khi chạy lại hoặc đổi cấu hình:**
+> - **Đổi `SEED_REVIEWS` phải xóa volume DB trước:** Postgres chỉ chạy script seed (`db/init/`) khi khởi tạo volume mới. Nếu sửa `SEED_REVIEWS` trong `.env` (hoặc trên máy đã từng chạy version cũ), hãy chạy `docker compose down -v` trước khi chạy lại benchmark.
+> - **Chạy trong thư mục kết quả sạch:** Cuối mỗi lần chạy, `benchmark/src/aggregate.js` tổng hợp **mọi** `<run_id>/` hiện có trong `results/<RESULTS_KIND>/`. Trước khi chạy chính thức (`RESULTS_KIND=official`) hoặc khi đo lại từ đầu, hãy đảm bảo thư mục `results/<RESULTS_KIND>/` sạch (chỉ giữ `.gitkeep`) để không gộp trùng các lượt cùng số `pair`. Khi chạy kiểm chứng sau khi repo đã có `results/official/`, dùng mặc định `RESULTS_KIND=pilot`.
 
 Chạy nhanh để kiểm môi trường (một cặp):
 

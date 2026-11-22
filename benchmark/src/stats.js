@@ -57,6 +57,34 @@ export async function takePgSnapshot(pgPool) {
   };
 }
 
+/**
+ * Read total rows in reviews table to record seed evidence in config.json.
+ * Tries SELECT count(*) first; falls back to pg_class.reltuples (populated by ANALYZE, avoiding pg_stat_user_tables.n_live_tup double-count after init) if bench_ro lacks SELECT on reviews.
+ */
+export async function getReviewsRowCount(pgPool) {
+  try {
+    const res = await pgPool.query('SELECT count(*)::int AS cnt FROM reviews');
+    const cnt = Number(res.rows[0]?.cnt);
+    if (Number.isFinite(cnt)) return cnt;
+  } catch {
+    // bench_ro may only have pg_read_all_stats without SELECT on reviews
+  }
+  try {
+    const res = await pgPool.query(`
+      SELECT COALESCE(NULLIF(c.reltuples::bigint, -1), s.n_live_tup)::int AS cnt
+      FROM pg_class c
+      JOIN pg_namespace n ON n.oid = c.relnamespace
+      LEFT JOIN pg_stat_user_tables s ON s.relid = c.oid
+      WHERE n.nspname = 'public' AND c.relname = 'reviews'
+    `);
+    const cnt = Number(res.rows[0]?.cnt);
+    if (Number.isFinite(cnt)) return cnt;
+  } catch {
+    // ignore in mock environments that do not emulate reviews count
+  }
+  return null;
+}
+
 /** Read remaining TTL in milliseconds for a Redis key (-2 missing, -1 no TTL). */
 export async function getCachePttl(redisClient, key) {
   return Number(await redisClient.pTTL(key));
