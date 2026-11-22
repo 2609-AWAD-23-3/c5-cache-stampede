@@ -2,7 +2,7 @@
 
 Service và runner xong 20/11 nên pilot thực tế chạy 20–21/11. Hạ tầng (`SEED_REVIEWS`, `cpus`) calibrate xong 20/11 (Task 3); các giá trị `[calibrate]` khác (`CACHE_TTL_MS`, lease, poll…) chốt trong pilot rồi đóng băng trước 22/11.
 
-Điền kết quả và đường dẫn tới `results/pilot/<run_id>/` cho mỗi dòng. Chỉ khi tất cả pass mới đóng băng các giá trị `[calibrate]` và chạy official.
+Điền kết quả và đường dẫn tới `results/pilot-r1/<run_id>/` cho mỗi dòng. Chỉ khi tất cả pass mới đóng băng các giá trị `[calibrate]` và chạy official.
 
 | # | Kiểm tra | Kỳ vọng | Kết quả | Evidence |
 | --- | --- | --- | --- | --- |
