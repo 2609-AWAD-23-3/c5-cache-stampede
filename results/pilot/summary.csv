@@ -1,0 +1,11 @@
+run_id,pair,mode,valid,queries_per_expiry,sum_db_queries_from_headers,p95_ms,p50_ms,max_ms,burst_span_ms,n_ok,n_error,hit_count,miss_query_count,miss_wait_count,miss_fallback_count,invalid_reasons
+20261122T080434Z-plain-1,1,plain,true,200,200,1842.136,1038.34,1938.552,36.07,200,0,0,200,0,0,
+20261122T080442Z-coalesced-1,1,coalesced,true,1,1,41.522,33.353,42.176,8.888,200,0,0,1,199,0,
+20261122T080448Z-coalesced-2,2,coalesced,true,1,1,45.639,34.21,46.212,4.353,200,0,0,1,199,0,
+20261122T080454Z-plain-2,2,plain,true,200,200,1631.086,835.359,1641.043,7.123,200,0,0,200,0,0,
+20261122T080501Z-plain-3,3,plain,true,200,200,1575.707,784.815,1588.382,9.254,200,0,0,200,0,0,
+20261122T080509Z-coalesced-3,3,coalesced,true,1,1,34.531,28.724,34.866,13.332,200,0,1,1,198,0,
+20261122T080515Z-plain-4,4,plain,true,200,200,1758.834,940.641,1839.745,13.232,200,0,0,200,0,0,
+20261122T080523Z-coalesced-4,4,coalesced,true,1,1,34.256,27.376,34.858,8.218,200,0,0,1,199,0,
+20261122T080529Z-coalesced-5,5,coalesced,true,1,1,38.009,32.935,38.448,10.252,200,0,0,1,199,0,
+20261122T080535Z-plain-5,5,plain,true,200,200,1560.935,853.649,1658.875,7.185,200,0,0,200,0,0,

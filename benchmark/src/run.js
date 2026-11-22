@@ -8,9 +8,9 @@ import pg from 'pg';
 import { createClient } from 'redis';
 import { Pool } from 'undici';
 import { computeRunSummary, recomputeAndAggregateDir } from './aggregate.js';
-import { epochMsNow, getCachePttl, round3, sleep, takePgSnapshot, waitForCacheExpiry } from './stats.js';
+import { epochMsNow, getCachePttl, getReviewsRowCount, round3, sleep, takePgSnapshot, waitForCacheExpiry } from './stats.js';
 
-const CANONICAL_PRODUCT_1_JSON = '{"id":1,"name":"Product 1","price_cents":1999,"review_count":80000,"avg_rating":3}';
+const CANONICAL_PRODUCT_1_JSON = '{"id":1,"name":"Product 1","price_cents":1999,"review_count":30000,"avg_rating":3}';
 const CANONICAL_PAYLOAD_SHA256 = crypto.createHash('sha256').update(CANONICAL_PRODUCT_1_JSON).digest('hex');
 const CACHE_KEY = 'cache:product:1';
 const TARGET_PATH = '/products/1';
@@ -412,6 +412,7 @@ export async function runBenchmark(env = process.env) {
   try {
     await redis.connect();
     await pgPool.query('SELECT 1');
+    const seedReviewsCount = await getReviewsRowCount(pgPool);
 
     const instanceConfigs = await checkInstancesHealthAndConfig(instances);
     const cacheTtlMs = Number(instanceConfigs[0].params.cache_ttl_ms);
@@ -496,6 +497,7 @@ export async function runBenchmark(env = process.env) {
             pairs_total: pairs,
             order_seed: orderSeed,
             results_kind: resultsKind,
+            seed_reviews_count: seedReviewsCount,
             client_headers_timeout_ms: clientHeadersTimeoutMs,
             client_body_timeout_ms: clientBodyTimeoutMs,
             fill_pttl_ms: fillPttlMs,

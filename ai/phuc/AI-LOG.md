@@ -43,9 +43,28 @@ Log của Phúc cho phần việc của mình: xác nhận contract (Task 1) và
 - **By hand**: Phúc đọc review của Vỹ trên PR #15 và quyết định sửa ngay vào nhánh trước khi merge, đồng thời thêm thông tin CPU/RAM như gợi ý.
 - **Kiểm chứng**: `node --check` trên tất cả file JS và `npm test` (`benchmark/test/selftest.js`) pass toàn bộ sau khi sửa.
 
+## 2026-11-22 — Task 5: Cập nhật hậu PR #18 và chạy Pilot (`PAIRS=5`)
+
+- **Tool**: Antigravity, Docker Desktop (`28.5.1`).
+- **Asked for**: Cập nhật 3 đầu việc Vượng nhờ ở PR #18 (`benchmark/Dockerfile`, `seed_reviews_count` trong `config.json`, `README.md`), đồng bộ `CONTRACT.md` v1.4, chạy Pilot 5 cặp (`PAIRS=5`) và điền `docs/PILOT-CHECKLIST.md`.
+- **Kept**:
+  - `benchmark/Dockerfile`: pin `node:22.23.5-alpine@sha256:1314fb30ec37592d5845e5a160d522c0e680972aa534549940b8d73bde88481a` khớp với `app/Dockerfile`.
+  - `benchmark/src/stats.js` & `benchmark/src/run.js`: bổ sung `getReviewsRowCount` lưu `seed_reviews_count` vào `config.json` (thử `SELECT count(*)` rồi fallback sang `pg_class.reltuples` khi `bench_ro` chưa có quyền `SELECT` trên `reviews`), cập nhật `CANONICAL_PRODUCT_1_JSON` lên `review_count: 30000`.
+  - `README.md`: bỏ dòng cảnh báo stub, bổ sung hướng dẫn `docker compose down -v` khi đổi `SEED_REVIEWS` và lưu ý chạy trong thư mục kết quả sạch.
+  - `docs/PILOT-CHECKLIST.md`: điền đầy đủ kết quả và đường dẫn evidence cho mục `#1–8`, `#15`, `#16`.
+- **Changed**: Đổi query fallback trong `getReviewsRowCount` từ `GREATEST(n_live_tup, reltuples)` sang ưu tiên `NULLIF(c.reltuples::bigint, -1)` sau khi kiểm chứng trực tiếp trên Postgres 16 thấy `pg_stat_user_tables.n_live_tup` bị cộng đúp thành `600000` ngay sau init+`ANALYZE`.
+- **Rejected**: Không cấp lại quyền cho `bench_ro` trong file `db/init/` (thuộc sở hữu Vượng); dùng `pg_class.reltuples` khi `bench_ro` thiếu quyền `SELECT` để giữ nguyên ranh giới file.
+- **By hand**: Phúc kiểm tra và phê duyệt các PR trung gian (#17), yêu cầu chạy đồng bộ `main` và thực thi Pilot trên máy của mình.
+- **Kiểm chứng**:
+  - `npm test` trong `benchmark/` pass toàn bộ sau khi sửa `stats.js`.
+  - `node app/test/smoke.mjs` trên stack thật: `ALL PASS` (#1, #2, #3, 400/404).
+  - `docker compose run --rm -e PAIRS=5 -e RESULTS_KIND=pilot benchmark`: **10/10 lượt `VALID`**, `seed_reviews_count: 300000`, `queries_saved: 199 (199–199)`, `delta_p95_ms: -1585.447 (-1800.614–-1522.926) ms`, `node benchmark/src/aggregate.js results/pilot` exit 0.
+
 ## Lỗi assistant / vấn đề phát hiện trong quá trình làm
 
 | # | Lỗi / Vấn đề | Assistant | Cách phát hiện | Cách sửa |
 | --- | --- | --- | --- | --- |
 | 1 | Unescaped backticks bên trong template literal trong `benchmark/src/aggregate.js` (dòng 325–340) gây `SyntaxError` | Antigravity | Chạy `node --check src/aggregate.js` | Đổi thành `` \` `` |
 | 2 | Khi một request trong burst trả `500` (`db_queries: null`), `computeRunSummary` vẫn ghi thêm `db_queries_mismatch: headers=39 vs pg_stat_statements=39` và `burst_span_exceeded: nullms > 100ms` dù hai số bằng nhau | Antigravity | Quan sát output của `npm test` (case invalid run 39/40) | Tách check `missing_x_db_queries_header` chỉ áp dụng cho `status === 200`, tách `burst_span_missing_timestamps` khỏi `burst_span_exceeded` |
+| 3 | `docker compose build` không build lại service `benchmark` vì service này nằm trong `profiles: ["bench"]`, khiến lần chạy pilot đầu vẫn dùng image cũ | Antigravity | Kiểm tra `config.json` thấy thiếu `seed_reviews_count` và `cpu_count` | Chạy tường minh `docker compose build benchmark` và chạy lại toàn bộ Pilot `PAIRS=5` |
+| 4 | Fallback `GREATEST(n_live_tup, reltuples)` ghi `seed_reviews_count: 600000` dù bảng thật chỉ có `300000` dòng (Postgres 16 cộng đúp `n_live_tup` sau `INSERT` + `ANALYZE` khi init) | Antigravity | Kiểm tra `config.json` vs `baseline_payload_sha256` và truy vấn trực tiếp `psql` kiểm chứng `reltuples=300000`, `n_live_tup=600000` | Đổi sang `COALESCE(NULLIF(c.reltuples::bigint, -1), s.n_live_tup)` trong `benchmark/src/stats.js` và chạy lại Pilot `PAIRS=5` xác nhận `300000` |
