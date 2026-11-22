@@ -58,7 +58,23 @@ Log của Phúc cho phần việc của mình: xác nhận contract (Task 1) và
 - **Kiểm chứng**:
   - `npm test` trong `benchmark/` pass toàn bộ sau khi sửa `stats.js`.
   - `node app/test/smoke.mjs` trên stack thật: `ALL PASS` (#1, #2, #3, 400/404).
-  - `docker compose run --rm -e PAIRS=5 -e RESULTS_KIND=pilot benchmark`: **10/10 lượt `VALID`**, `seed_reviews_count: 300000`, `queries_saved: 199 (199–199)`, `delta_p95_ms: -1585.447 (-1800.614–-1522.926) ms`, `node benchmark/src/aggregate.js results/pilot` exit 0.
+  - `docker compose run --rm -e PAIRS=5 -e RESULTS_KIND=pilot-r1 benchmark`: **10/10 lượt `VALID`**, `seed_reviews_count: 300000`, `queries_saved: 199 (199–199)`, `delta_p95_ms: -1762.677 (-1956.738–-1598.673) ms`, `node benchmark/src/aggregate.js results/pilot-r1` exit 0.
+
+## 2026-11-22 — Task 5: Xử lý review PR #19 và duyệt PR #20 (`CONTRACT.md` v1.5)
+
+- **Tool**: Antigravity, Docker Desktop (`28.5.1`), GitHub CLI (`gh`).
+- **Asked for**: Xử lý yêu cầu sửa ở PR #19 (`CHANGES_REQUESTED` từ `@tranquocvy`) và review/approve PR #20 (`CONTRACT.md` v1.5).
+- **Kept**:
+  - Chạy lại 5 cặp pilot vào `results/pilot-r1/` bằng `RESULTS_KIND=pilot-r1` (để `config.json` ghi đúng `results_kind: "pilot-r1"`), dọn trống `results/pilot/` chỉ giữ `.gitkeep`.
+  - Cập nhật đường dẫn và số liệu `pilot-r1` trong `docs/PILOT-CHECKLIST.md`, ghi rõ mục #15 trên máy Phúc là chạy từ volume sạch trên nhánh phát triển (không phải fresh clone).
+  - Duyệt PR #20 sau khi đối chiếu cách diễn đạt `CACHE_TTL_MS` với số liệu `burst_span_ms` thực đo.
+- **Changed**: Thay đổi thư mục lưu evidence pilot từ `results/pilot/` sang `results/pilot-r1/` để tránh gộp trùng với lần chạy `PAIRS=1` mặc định ở Task 7.
+- **Rejected**: Không chỉ `git mv` thư mục `results/pilot/` cũ sang `results/pilot-r1/` vì `config.json` cũ vẫn mang `"results_kind": "pilot"`; chạy lại sạch từ `docker compose down -v`.
+- **By hand**: Phúc kiểm tra PR #20, yêu cầu thực hiện cả việc approve PR #20 và sửa PR #19 theo góp ý của Vỹ.
+- **Kiểm chứng**:
+  - `docker compose run --rm -e PAIRS=5 -e RESULTS_KIND=pilot-r1 benchmark`: 10/10 lượt `VALID`, `0` `miss-fallback`, `queries_saved = 199 (199–199)`, `delta_p95_ms = -1762.677 (-1956.738–-1598.673) ms`.
+  - `node benchmark/src/aggregate.js results/pilot-r1`: exit 0; `node app/test/smoke.mjs`: `ALL PASS`.
+  - `results/pilot/` chỉ còn duy nhất `.gitkeep`.
 
 ## Lỗi assistant / vấn đề phát hiện trong quá trình làm
 
