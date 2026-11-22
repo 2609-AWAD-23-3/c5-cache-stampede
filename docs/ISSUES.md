@@ -23,7 +23,7 @@ Nếu trễ, cắt theo thứ tự: sensitivity poll 1/20 ms, mức tải 20 req
 | 3 | Task 3: Infrastructure, calibration and lock tests | Hạ tầng, calibrate và test lock | Vượng | M2 | 2 |
 | 4 | Task 4: Benchmark runner | Runner đo | Phúc | M2 | 1 |
 | 5 | Task 5: Pilot, freeze and official runs | Pilot, đóng băng và chạy official | Phúc | M3 | 2, 3, 4 |
-| 6 | Task 6: Aggregation and result analysis | Aggregate và phân tích kết quả | Vỹ | M2 (aggregate), M4 (phân tích) | 4, 5 |
+| 6 | Task 6: Aggregation and result analysis | Aggregate và phân tích kết quả | Vỹ | M2 (kiểm độc lập), M4 (phân tích) | 4, 5 |
 | 7 | Task 7: Cross-review, source verification and fresh clone | Review chéo, kiểm nguồn và fresh clone | Vỹ | M3 | 2, 3, 4 |
 | 8 | Task 8: REPORT and README | REPORT và README | Vỹ (Vượng và Phúc viết phần của mình) | M4 | 5, 6 |
 | 9 | Task 9: Slides and video | Slides và video | cả ba (Vỹ ghép) | M4 | 8 |
@@ -61,10 +61,10 @@ Xong khi: payload hai mode khớp hash; cache hit cho `X-DB-Queries=0`; một re
 ## Task 3: Hạ tầng, calibrate và test lock — Vượng — M2 20/11 (test lock xong trước pilot 21/11)
 
 - Rà `compose.yaml`, seed; calibrate hạ tầng (`SEED_REVIEWS`, `cpus`) trên máy chuẩn xong 20/11; ghi số đo. Các giá trị `[calibrate]` khác (`CACHE_TTL_MS`, lease, poll…) chốt trong pilot 20–21/11.
-- Test lock chủ ý (checklist #10–14): recheck, thứ tự ghi cache trước nhả lock, lease ngắn hơn query, giết holder, waiter timeout. Mỗi case có log.
+- Test lock chủ ý (checklist mục 10–14): recheck, thứ tự ghi cache trước nhả lock, lease ngắn hơn query, giết holder, waiter timeout. Mỗi case có log.
 - Chạy fresh clone trên máy Vượng, làm đúng README, `PAIRS=1`.
 
-Xong khi: checklist #9–14 có evidence; fresh clone chạy được trên máy thứ hai. Nếu đã cắt "máy thứ hai" thì chỉ cần fresh clone trên máy chuẩn.
+Xong khi: checklist mục 9–14 có evidence; fresh clone chạy được trên máy thứ hai. Nếu đã cắt "máy thứ hai" thì chỉ cần fresh clone trên máy chuẩn.
 
 ## Task 4: Runner đo — Phúc — M2 20/11
 
@@ -76,19 +76,21 @@ Xong khi: chạy được một cặp từ fresh clone, log đủ field, lượt
 
 ## Task 5: Pilot, đóng băng và chạy official — Phúc — M3 22/11 (pilot 21/11, đóng băng 21/11, official 22/11)
 
-- Chạy pilot 5 lượt mỗi mode, điền `docs/PILOT-CHECKLIST.md` kèm evidence (mục #6, #7 chỉ cần phép đo hợp lệ, không có ngưỡng đạt/trượt).
+- Chạy pilot 5 lượt mỗi mode, điền `docs/PILOT-CHECKLIST.md` kèm evidence (mục 6, 7 chỉ cần phép đo hợp lệ, không có ngưỡng đạt/trượt).
 - Cùng Vỹ đóng băng giá trị `[calibrate]` rồi ghi vào contract và README.
 - Chạy official 10 cặp xen kẽ trên máy chuẩn, ghi môi trường và commit, commit `results/official/`.
 
 Xong khi: checklist đủ evidence; `results/official/` có mọi lượt kể cả lượt invalid kèm lý do.
 
-## Task 6: Aggregate và phân tích kết quả — Vỹ — M2 20/11 (aggregate), phân tích xong 23/11
+## Task 6: Aggregate và phân tích kết quả — Vỹ — M2 (kiểm độc lập xong 22/11), phân tích xong 23/11
 
-- Viết `benchmark/src/aggregate.js`: đọc `results/<kind>/` (`pilot` hoặc `official`), ghi `summary.csv` và `report_table.md` cùng thư mục đó theo `CONTRACT.md` mục 7; p95 nearest-rank, `delta_p95_ms` theo cặp, median và min–max.
-- Phân tích nguyên nhân từ log: pool wait, lock wait, số `miss-fallback`; báo cáo đúng dấu của delta.
-- Mọi số trong report truy được về dòng trong log.
+`benchmark/src/aggregate.js` do Phúc viết trong PR #15 (Task 4) và được giữ làm bản chính; Task 6 không viết lại file này.
 
-Xong khi: tính lại độc lập được các con số chính từ `requests.jsonl`.
+- Kiểm độc lập các số chính bằng script riêng (`benchmark/crosscheck/crosscheck.mjs`), **không import** `aggregate.js`: đọc `requests.jsonl` và snapshot của từng lượt, tính lại p95 nearest-rank, `queries_per_expiry`, `delta_p95_ms` theo cặp, median và min–max, rồi đối chiếu với `summary.csv` và `report_table.md`. Lệch ở đâu thì báo Phúc sửa `aggregate.js`.
+- Phân tích nguyên nhân từ log: pool wait, lock wait, số `miss-fallback`; báo cáo đúng dấu của delta (kết quả trong `docs/RESULT-ANALYSIS.md`).
+- Mọi số trong report truy được về dòng trong log (`results/official/crosscheck_report.md`).
+
+Xong khi: tính lại độc lập được các con số chính từ `requests.jsonl` và khớp với `aggregate.js`.
 
 ## Task 7: Review chéo, kiểm nguồn và fresh clone — Vỹ — review PR xong trước 21/11, phần còn lại 22/11
 
