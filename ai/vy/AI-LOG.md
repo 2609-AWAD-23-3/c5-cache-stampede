@@ -103,6 +103,16 @@ Log của Vỹ cho phần mình dùng AI: brainstorm, kế hoạch, review thi�
 - **Kiểm chứng**: Script chạy PASS trên `results/official` (20 lượt). Thử âm tính trên bản sao `results/official` bị sửa tay (một request đổi status 200 thành 500 và một giá trị p95 trong `summary.csv`): script báo lệch và thoát mã 1, bản sao đã xóa. Hai điểm là suy luận từ số liệu, không đo trực tiếp: query plain chậm do tranh CPU, và các lượt plain có hit đều có `burst_span_ms` lớn; `docs/RESULT-ANALYSIS.md` nêu rõ chưa kết luận nhân quả. Phần thời gian của coalesced không được log (khoảng 65 ms ở request p95) cũng ghi rõ là chưa giải thích được.
 - **Sau review của Phúc (PR #22)**: Phúc chỉ ra hai chỗ trong `docs/RESULT-ANALYSIS.md`: "khoảng 35 ms" nên là p50 32.9 ms từ file calibrate, và "request đến muộn" chưa chính xác vì `server_recv_ts` của request hit đầu tiên sớm hơn lúc cache được ghi. Đã sửa cả hai, đồng thời bỏ câu gán 65 ms không log cho "client hoặc event loop" vì nguồn chưa xác định. Ba góp ý nhỏ về `crosscheck.mjs` cũng đã làm: kiểm số request bằng `burst_size`, kiểm request status 200 thiếu `X-DB-Queries`, và kiểm payload chỉ trên request status 200. Thử âm tính: xóa một dòng request và xóa `db_queries` ở một request đều cho FAIL đúng lý do; official vẫn PASS.
 
+## 2026-11-23 — Task 7: Kiểm nguồn, version và fresh clone lần cuối
+
+- **Tool**: Claude (Claude Code), subagent đọc trang web, trình duyệt tích hợp, Docker Hub và npm registry, Docker Desktop.
+- **Asked for**: Kiểm version và các khẳng định kỹ thuật trong repo với tài liệu chính thức (Task 7), rồi "vậy hoàn thiện toàn bộ task 7 ở local trước đi": bảng nguồn, fresh clone, sửa các điểm còn mở.
+- **Kept**: `docs/SOURCES.md` (version, link, ngày đọc 23/11/2026, kết quả kiểm). Digest ba image khớp Docker Hub; PostgreSQL 16.16, Redis 7.4.12, Node 22.23.5, Alpine 3.24.4 xác nhận có thật. Sửa nhãn "Docker Desktop 29.9.3" thành "Docker Engine 29.9.3" (Vỹ chọn giữ Engine), sửa các `#N` chỉ checklist trong `docs/PILOT-CHECKLIST.md`, `app/test/calibrate-query.mjs`, `app/test/lock-tests.mjs`.
+- **Changed**: Claude đưa ra ba việc trước, Vỹ chốt: giữ Docker Engine ("không cần thay đổi mà giữ docker engine được không") và làm trước ở local.
+- **Rejected**: Không hỏi Vượng số Docker Desktop thật; ghi theo Engine.
+- **By hand**: Vỹ nghi ngờ kết quả của subagent ("tìm lại bằng browser, có thể agent nó tìm chưa kỹ đấy"), nên Claude đọc lại bằng trình duyệt các điểm agent bỏ sót hoặc báo sai.
+- **Kiểm chứng**: Digest kiểm bằng API Docker Hub; `cat /etc/alpine-release` trong image đã pin trả 3.24.4; Redis 7.4 hỗ trợ theo SECURITY.md của redis/redis; Node 22 Maintenance LTS, hết hỗ trợ 2027-04-30 theo nodejs/release; `pg`, `redis`, `undici` đối chiếu dist-tags trên npm. Fresh clone `main` tại `8e97ebd` chạy `PAIRS=1` hợp lệ 2/2; lượt đầu dùng nhầm image cũ từ 20/11 nên thiếu `seed_reviews_count`, sau khi xóa image và chạy lại thì có (300000). Một số trang docs (Postgres, Redis, Docker, node-postgres) chỉ được đọc qua công cụ tải trang; các trang bị cắt dài chỉ dựa vào phần đọc nguyên văn.
+
 ## Lỗi assistant được phát hiện trong quá trình làm
 
 | # | Lỗi | Assistant | Cách phát hiện | Cách sửa |
@@ -118,3 +128,4 @@ Log của Vỹ cho phần mình dùng AI: brainstorm, kế hoạch, review thi�
 | 9 | Bản nháp comment dưới tài khoản Vỹ viết "Vỹ sẽ chốt" | Claude | Vỹ đọc bản nháp: "không phải là tôi sẽ chốt à" | đổi thành "mình chốt" |
 | 10 | Viết `checklist #N` trong review và comment, GitHub tự gắn link sang issue hoặc PR cùng số | Claude | Vỹ thấy link sai trong issue #5 | đổi thành "checklist mục N" ở các chỗ đã đăng; trong file nguồn đã sửa `docs/ISSUES.md`, còn `docs/PILOT-CHECKLIST.md` (dòng 26 và 31) và `app/test/calibrate-query.mjs` (dòng 34) |
 | 11 | Bản đầu script Task 6 tính `median_query_ms` trên mọi request, lệch `summary.json` của coalesced (0 so với 10.039 ms) | Claude | chạy đối chiếu trên pilot-r1 | tính trên request có `db_queries > 0`; định nghĩa này `aggregate.js` đang dùng, contract chưa ghi |
+| 12 | Báo cáo của subagent thiếu hoặc sai: nói `redis` mới nhất là 6.2.1 (thực tế 6.3.1), không tìm được ngày EOL của Node 22 và không xác nhận được hỗ trợ của Redis 7.4 | Claude (subagent) | Vỹ nghi ngờ kết quả, Claude đọc lại bằng trình duyệt và npm registry | dùng dữ liệu đọc lại: 6.3.1; Node 22 EOL 2027-04-30; Redis 7.4.x được hỗ trợ theo SECURITY.md |

@@ -31,7 +31,7 @@ const summary = {
   n,
   query_ms: { min: s[0], p50: quantile(s, 0.5), p90: quantile(s, 0.9), max: s.at(-1) },
   explain_execution_ms: explain,
-  target: '20-50 ms (CONTRACT.md mục 3, checklist #9)',
+  target: '20-50 ms (CONTRACT.md mục 3, checklist mục 9)',
   within_target: quantile(s, 0.5) >= 20 && quantile(s, 0.9) <= 50,
 };
 const file = writeEvidence('calibration', `${stamp()}-seed${seed}.json`, { ...summary, raw_query_ms: queryMs, raw_pool_wait_ms: poolWaitMs });
