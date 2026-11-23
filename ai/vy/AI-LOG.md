@@ -113,6 +113,16 @@ Log của Vỹ cho phần mình dùng AI: brainstorm, kế hoạch, review thi�
 - **By hand**: Vỹ nghi ngờ kết quả của subagent ("tìm lại bằng browser, có thể agent nó tìm chưa kỹ đấy"), nên Claude đọc lại bằng trình duyệt các điểm agent bỏ sót hoặc báo sai.
 - **Kiểm chứng**: Digest kiểm bằng API Docker Hub; `cat /etc/alpine-release` trong image đã pin trả 3.24.4; Redis 7.4 hỗ trợ theo SECURITY.md của redis/redis; Node 22 Maintenance LTS, hết hỗ trợ 2027-04-30 theo nodejs/release; `pg`, `redis`, `undici` đối chiếu dist-tags trên npm. Fresh clone `main` tại `8e97ebd` chạy `PAIRS=1` hợp lệ 2/2; lượt đầu dùng nhầm image cũ từ 20/11 nên thiếu `seed_reviews_count`, sau khi xóa image và chạy lại thì có (300000). Một số trang docs (Postgres, Redis, Docker, node-postgres) chỉ được đọc qua công cụ tải trang; các trang bị cắt dài chỉ dựa vào phần đọc nguyên văn.
 
+## 2026-11-23 — Task 8: Skeleton REPORT/README, viết mục 1, 5, 6.1, 7 của REPORT
+
+- **Tool**: Claude (Claude Code), GitHub CLI (`gh`), Node.js.
+- **Asked for**: "brainstorm thật kỹ để làm skeleton report và readme ở task 8 ... phần nào của ai thì ghi rõ vào, sau đó bàn giao qua comment của task 8"; sau đó "viết phần của mình trong report đi, viết phải đầy đủ và dễ hiểu".
+- **Kept**: Comment bàn giao trên issue #10 (skeleton từng mục, người viết, nguồn số liệu, bảng đối chiếu với đề, mốc). Trong `REPORT.md`: mục 1 (trả lời ngắn và bảng cách đọc số), mục 5 (khuyến nghị và khi nên tránh, mỗi ý ghi đo được / suy luận / chưa đo), mục 6.1 (giới hạn của phép đo), mục 7 (nguồn kèm ngày đọc, lấy từ `docs/SOURCES.md`).
+- **Changed**: Chia lại việc so với issue: mục 2.3 sang Phúc vì runner là Task 4 của Phúc; mục 6.1 (issue chưa giao) cho Vỹ. Sau khi ghép với PR #23, bỏ hai chỗ lặp số của mục 4 trong mục 5 và 6.1, thay bằng trỏ về mục 4.
+- **Rejected**: Giới hạn số từ cho từng mục mà Claude tự đặt trong bản đầu của skeleton (xem lỗi 13).
+- **By hand**: Vỹ yêu cầu ưu tiên đủ và dễ hiểu thay vì ngắn, và hỏi lại giới hạn 3 trang có trong đề không.
+- **Kiểm chứng**: Giới hạn "tối đa 3 trang" kiểm lại trong PDF đề ("At most three pages") và bản dịch, chỉ áp cho `REPORT.md`. Mọi số trong mục 1, 5, 6.1 đối chiếu với `results/official/report_table.md`, `results/official/crosscheck_report.md`, `results/pilot-r1/report_table.md`, `results/lock-tests/20261119T054509Z/` và `docs/PILOT-CHECKLIST.md`; hai số tối đa (query của holder 79.237 ms, thời gian chờ lock 198.302 ms) tính trực tiếp từ `results/official/*/requests.jsonl`. Lệnh build trong README kiểm bằng `docker compose config --services` (không có `benchmark` khi không bật profile `bench`).
+
 ## Lỗi assistant được phát hiện trong quá trình làm
 
 | # | Lỗi | Assistant | Cách phát hiện | Cách sửa |
@@ -129,3 +139,4 @@ Log của Vỹ cho phần mình dùng AI: brainstorm, kế hoạch, review thi�
 | 10 | Viết `checklist #N` trong review và comment, GitHub tự gắn link sang issue hoặc PR cùng số | Claude | Vỹ thấy link sai trong issue #5 | đổi thành "checklist mục N" ở các chỗ đã đăng; trong file nguồn đã sửa `docs/ISSUES.md`, còn `docs/PILOT-CHECKLIST.md` (dòng 26 và 31) và `app/test/calibrate-query.mjs` (dòng 34) |
 | 11 | Bản đầu script Task 6 tính `median_query_ms` trên mọi request, lệch `summary.json` của coalesced (0 so với 10.039 ms) | Claude | chạy đối chiếu trên pilot-r1 | tính trên request có `db_queries > 0`; định nghĩa này `aggregate.js` đang dùng, contract chưa ghi |
 | 12 | Báo cáo của subagent thiếu hoặc sai: nói `redis` mới nhất là 6.2.1 (thực tế 6.3.1), không tìm được ngày EOL của Node 22 và không xác nhận được hỗ trợ của Redis 7.4 | Claude (subagent) | Vỹ nghi ngờ kết quả, Claude đọc lại bằng trình duyệt và npm registry | dùng dữ liệu đọc lại: 6.3.1; Node 22 EOL 2027-04-30; Redis 7.4.x được hỗ trợ theo SECURITY.md |
+| 13 | Bản đầu skeleton Task 8 tự chia giới hạn 3 trang thành số từ tối đa cho từng mục và yêu cầu Phúc rút mục 4, làm như đề ưu tiên viết ngắn | Claude | Vỹ đọc comment bàn giao và yêu cầu ưu tiên đủ, dễ hiểu | bỏ giới hạn số từ trong comment (issue #10); giới hạn 3 trang chỉ kiểm khi ghép, cắt chỗ trùng trước, không cắt phần giải thích |

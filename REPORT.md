@@ -1,13 +1,34 @@
 Repository: https://github.com/2609-AWAD-23-3/c5-cache-stampede
 
-> Template. Nội dung được viết ở Task 8, tối đa 3 trang.
-
 # C5 — Request coalescing với Redis lock so với cache-aside thường
 
 ## 1. Câu hỏi
 > When a hot cache key expires under 200 concurrent requests, how many Postgres queries does request coalescing with a Redis lock save compared with plain cache-aside (queries per expiry), and how much does it add to p95 latency (ms)?
 
 Phạm vi: chỉ đo layer Redis đứng trước Postgres. L1 in-process và CDN nằm ngoài phạm vi. In-process single-flight là phương án thay thế chưa đo.
+
+**Trả lời ngắn.** Kết quả trên máy chuẩn, 10 cặp lượt đo, ghi dạng median (min–max):
+
+- Mỗi lần key nóng hết hạn, `plain` chạy **200 (115–200)** query Postgres, `coalesced` chỉ chạy **1 (1–1)**. Coalescing tiết kiệm **199 (114–199) queries/expiry**.
+- Coalescing **không làm tăng p95 mà làm giảm p95**: `delta_p95_ms` = **−3696.122 ms (−4353.170 đến −1863.389)**, âm ở cả 10/10 cặp. Cụ thể p95 của `plain` là 3925.724 ms, của `coalesced` là 138.881 ms.
+- Lý do (xem mục 4): ở `plain`, 200 request cùng query nên phải xếp hàng chờ 20 connection Postgres (10 mỗi instance). Ở `coalesced`, chỉ một request query, 199 request còn lại chờ khoảng 43 ms rồi đọc kết quả từ cache.
+- Con số ms phụ thuộc máy (mục 6.1). Kết quả lặp lại được trên máy khác là dấu của chênh lệch và độ lớn tương đối.
+
+Số liệu lấy từ `results/official/report_table.md` và được tính lại độc lập trong `results/official/crosscheck_report.md`.
+
+**Cách đọc số trong report.**
+
+| Thuật ngữ | Nghĩa |
+| --- | --- |
+| `plain` | Baseline, cache-aside thường: request nào thấy cache trống cũng tự query Postgres rồi ghi lại cache. |
+| `coalesced` | Thay đổi cần đo: khi cache trống, chỉ request lấy được Redis lock mới query Postgres. Các request khác chờ rồi đọc kết quả mà request đó ghi vào cache. |
+| Lượt đo, một lần hết hạn (expiry) | Key `cache:product:1` tự hết TTL, rồi runner bắn ngay 200 request đồng thời vào product 1. Mỗi lượt đo là đúng một lần hết hạn. |
+| Cặp | Một lượt `plain` và một lượt `coalesced` chạy liền nhau. 5 cặp chạy `plain` trước, 5 cặp chạy `coalesced` trước. |
+| queries/expiry | Số lần Postgres chạy query mục tiêu trong một lượt, đếm bằng `pg_stat_statements` (số `calls` sau burst trừ trước burst) và kiểm chéo với header `X-DB-Queries` của từng response. |
+| p50, p95 (ms) | 50% hoặc 95% số request của lượt xong trong khoảng thời gian này. Thời gian đo ở client, từ lúc gửi đến lúc đọc xong body. p95 cho biết nhóm request chậm nhất phải chờ bao lâu. |
+| `delta_p95_ms` | p95 của `coalesced` trừ p95 của `plain` trong cùng một cặp. Âm nghĩa là coalescing làm p95 giảm, dương nghĩa là làm tăng. |
+| median (min–max) | Median là giá trị đứng giữa của 10 lượt (hoặc 10 cặp). Trong ngoặc là giá trị nhỏ nhất và lớn nhất, dùng làm spread. |
+| `hit`, `miss-query`, `miss-wait`, `miss-fallback` | Kết quả cache của từng request: `hit` là đọc được cache ngay; `miss-query` là tự query; `miss-wait` là chờ request giữ lock rồi đọc cache (chỉ `coalesced`); `miss-fallback` là chờ quá 2000 ms hoặc gặp lỗi Redis nên tự query (chỉ `coalesced`). |
 
 ## 2. Setup
 ### 2.1 Môi trường và version
@@ -47,10 +68,63 @@ Request coalescing cắt số query Postgres mỗi lần key nóng hết hạn t
 - **Spread của `plain` (`115–200` queries/expiry):** 4/10 lượt `plain` (cặp 1, 3, 7, 10: `138`, `115`, `116`, `165` queries) có `35–85` `hit` (`hit_rate` tới `0.425`, ví dụ `results/official/20261122T152145Z-plain-3/summary.json`, `results/official/20261122T152248Z-plain-7/summary.json`); toàn bộ hit nằm ở một instance khi nhánh đọc cache của instance đó diễn ra sau lúc instance kia đã ghi cache.
 
 ## 5. Khuyến nghị và khi nên tránh
-<!-- -->
 
-## 6. Giới hạn của phép đo
-<!-- một hot key, một dạng query, local, single-node Redis (không phải Redlock), CPU chia sẻ giữa client/server, burst span -->
+Mỗi ý dưới đây ghi rõ mức bằng chứng: **đo được** (có trong log), **suy luận** (rút ra từ log nhưng không đo trực tiếp) hoặc **chưa đo**.
+
+### Khuyến nghị
+
+**Nên dùng request coalescing với Redis lock cho hot key có query đắt và nhiều request đồng thời lúc key hết hạn.** Trong thí nghiệm này, coalescing giảm số query mỗi lần hết hạn từ 200 xuống 1 và giảm p95 khoảng 3,7 s (**đo được**, mục 4). Phần p95 giảm được là do bỏ được hàng đợi ở connection pool: ở `plain`, request đứng vị trí p95 dành khoảng 99% thời gian cho việc chờ pool và chạy query, còn ở `coalesced` không request nào phải chờ pool (mục 4).
+
+Khi dùng cần chỉnh và theo dõi ba điểm sau:
+
+- **`LOCK_LEASE_MS` phải dài hơn thời gian query của holder khi có tải.** Holder là request giữ lock. Nếu lease hết trước khi holder ghi xong cache, request khác lấy được lock và query lặp lại. Test chủ ý với lease 10 ms cho 3 query thay vì 1 (**đo được**, `results/lock-tests/20261119T054509Z/case-12.json`). Trong official, query của holder lâu nhất 79.237 ms, còn lease là 5000 ms.
+- **`WAIT_TIMEOUT_MS` phải dài hơn thời gian holder refill cache.** Nếu ngắn hơn, các request đang chờ cùng hết thời gian, cùng tự query, và stampede quay lại. Test chủ ý giữ lock 15 s cho kết quả 50/50 request `miss-fallback`, mỗi request 1 query (**đo được**, `case-14.json`). Trong official, request chờ lâu nhất là 198.302 ms, còn timeout là 2000 ms, nên có 0 fallback.
+- **Theo dõi `miss_fallback_count` và queries/expiry trong vận hành.** Hai số này tăng là dấu hiệu lease hoặc timeout không còn hợp với thời gian query thật.
+
+### Khi nên tránh hoặc cần cân nhắc
+
+- **Không chấp nhận được độ trễ xấu nhất bằng khoảng `WAIT_TIMEOUT_MS`.** Khi holder chết giữa chừng, các request đang chờ phải đợi hết timeout mới tự query. Trong test giết holder, chúng fallback sau 2000.5–2008.3 ms (**đo được**, `case-13.json`).
+- **Key ít request đồng thời.** Nhóm chỉ đo mức 200 request (**chưa đo** mức thấp hơn). Khi ít request, `plain` gần như không phải xếp hàng chờ pool. Trong khi đó `coalesced` vẫn tốn thêm bước lấy lock, và request đang chờ có thể đọc được cache muộn tới `WAIT_POLL_MS` = 5 ms sau khi holder đã ghi xong (`docs/PILOT-CHECKLIST.md` mục 16). Vì vậy ở tải thấp, coalescing có thể làm p95 tăng nhẹ (**suy luận**).
+- **Query rẻ, hoặc pool và Postgres còn dư sức.** Lợi ích về p95 trong thí nghiệm đến chủ yếu từ hàng đợi pool, nên khi không có hàng đợi này thì lợi ích nhỏ hơn nhiều. Phần tiết kiệm số query thì vẫn còn (**suy luận**).
+- **Redis đã gần quá tải.** Request đang chờ đọc cache mỗi 5 ms. Với thời gian chờ median 42.749 ms, mỗi request đọc khoảng 8–9 lần, tức khoảng 1.700 lệnh `GET` cho 199 request mỗi lần hết hạn (**suy luận** từ log; tải Redis **chưa đo**).
+- **Cần mutual exclusion chặt, ví dụ lock bảo vệ thao tác ghi dữ liệu.** Lock trên một Redis node không bảo đảm loại trừ khi failover, vì replication bất đồng bộ (theo trang distributed locks của Redis, mục 7). Với refill cache, nếu lock hỏng thì hậu quả chỉ là có thêm query, nên vẫn chấp nhận được. Với việc ghi dữ liệu thì không nên dùng kiểu lock này.
+- **Phương án thay thế (chưa đo):** in-process single-flight (gộp request trong một instance, không cần Redis), làm mới cache trước khi hết hạn, hoặc trả dữ liệu cũ trong lúc làm mới (stale-while-revalidate). Nhóm chưa đo các cách này nên không so sánh số.
+
+## 6. Giới hạn
+
+### 6.1 Giới hạn của phép đo
+
+- **Phạm vi hẹp.** Thí nghiệm có một hot key (product 1), một dạng query, một mức tải (200 request, 100 mỗi instance), Redis và Postgres mỗi thứ một node, chạy local bằng Docker. Kết luận không tự động đúng khi có nhiều key nóng cùng lúc, khi tải thấp hơn hoặc khi chạy trên cluster.
+- **Client và server chạy chung một máy.** Container benchmark (1 CPU) chạy cùng máy với app, Redis và Postgres. Mỗi container có giới hạn `cpus`, nhưng tất cả vẫn dùng chung CPU vật lý của Docker trên WSL2, nên tranh chấp tài nguyên ảnh hưởng tới latency. Ví dụ, query của `plain` khi có tải có median 383.232 ms, trong khi chạy một mình chỉ mất 32.9 ms (p50, `results/calibration/20261119T051447Z-seed300000.json`).
+- **Spread chỉ phản ánh biến thiên trong một lần chạy.** 10 cặp chạy liên tục trong khoảng 2,5 phút (15:21–15:23 UTC, 22/11/2026) trên một máy. Spread này không cho biết số liệu thay đổi thế nào giữa các máy hay giữa các ngày.
+- **Số ms phụ thuộc máy.** Pilot trên máy Phúc (Intel i5-12500H, Docker Engine 28.5.1, 5 cặp, `results/pilot-r1/report_table.md`) cho p95 của `plain` là 1820.438 ms và của `coalesced` là 41.825 ms, delta median −1762.677 ms. Trên máy chuẩn, hai giá trị p95 tương ứng là 3925.724 ms và 138.881 ms. Điều giữ nguyên trên cả hai máy là `coalesced` chạy 1 query mỗi lần hết hạn và delta âm ở mọi cặp. Người chạy lại nên so dấu và độ lớn tương đối, không so con số ms.
+- **`plain` không phải lúc nào cũng chạy 200 query.** 4/10 lượt chỉ có 115–165 query, vì một số request đọc được cache mà instance kia vừa ghi. Đó là lý do `queries_saved` có spread 114–199. Nhóm chưa xác định được vì sao chỉ một số lượt có hit. Timestamp `server_recv_ts` được lấy lúc request vào handler, không phải lúc đọc cache, nên không dùng để giải thích được (`docs/RESULT-ANALYSIS.md` mục 3).
+- **Một phần latency của `coalesced` chưa giải thích được.** Ở request đứng vị trí p95, các thời gian mà app có log (chờ lock, chờ pool, query) chỉ chiếm median 54 ms trên 139 ms. Phần còn lại chưa xác định được nguồn, vì app không log đoạn từ lúc vào handler đến lúc đọc cache, và client cũng không log riêng thời gian gửi (số chi tiết ở mục 4).
+- **Burst sát ngưỡng hợp lệ.** Một lượt chỉ hợp lệ khi `burst_span_ms` ≤ 100 ms (`CONTRACT.md` mục 8). Giá trị lớn nhất là 98.135 ms, ở cặp 8, lượt `coalesced`. Chỉ số này cũng dựa trên `server_recv_ts`, tức thời điểm request vào handler.
+- **Số dòng seed là giá trị ước lượng.** `seed_reviews_count` = 300000 trong official lấy từ `pg_class.reltuples`, vì commit `3682b13` chưa cấp quyền `SELECT` trên `reviews` cho `bench_ro`. Sau đó nhóm đếm lại bằng `count(*)` và được đúng 300000 (PR #21).
+
+### 6.2 Giới hạn của lock
+<!-- Vượng -->
 
 ## 7. Nguồn
-<!-- link official docs kèm ngày đọc -->
+
+Mọi link dưới đây đọc ngày **23/11/2026**. Bảng đầy đủ, gồm từng claim và kết quả kiểm, nằm trong [`docs/SOURCES.md`](docs/SOURCES.md).
+
+Version đã dùng (pin bằng digest trong `compose.yaml` và Dockerfile):
+
+- PostgreSQL 16.16, phát hành 2026-11-12: https://www.postgresql.org/docs/release/16.16/ ; chính sách hỗ trợ (nhánh 16 được hỗ trợ đến 2028-11-09): https://www.postgresql.org/support/versioning/
+- Redis 7.4.12, phát hành 2026-10-26: https://github.com/redis/redis/releases/tag/7.4.12 ; nhánh còn được hỗ trợ: https://github.com/redis/redis/security/policy
+- Node.js 22.23.5, phát hành 2026-11-11, Maintenance LTS đến 2027-04-30: https://nodejs.org/en/blog/release/v22.23.5 ; https://github.com/nodejs/release#release-schedule
+- Alpine Linux 3.24.4 (bên trong image Node): https://alpinelinux.org/releases/
+- Digest image trên Docker Hub: https://hub.docker.com/v2/repositories/library/postgres/tags/16.16 , https://hub.docker.com/v2/repositories/library/redis/tags/7.4.12 , https://hub.docker.com/v2/repositories/library/node/tags/22.23.5-alpine
+- Thư viện npm `pg` 8.23.1, `redis` 4.7.1, `undici` 6.29.1: https://registry.npmjs.org/-/package/pg/dist-tags , https://registry.npmjs.org/-/package/redis/dist-tags , https://registry.npmjs.org/-/package/undici/dist-tags
+- Docker Desktop 4.99.0 kèm Docker Engine 29.9.3 và Compose v5.7.0 (máy chuẩn): https://docs.docker.com/desktop/release-notes/ ; https://docs.docker.com/engine/release-notes/29/ ; Docker Engine 28.5.1 (máy pilot): https://docs.docker.com/engine/release-notes/28/
+
+Hành vi mà thiết kế dựa vào:
+
+- `pg_stat_statements` (`calls`, `track=all`, `shared_preload_libraries`): https://www.postgresql.org/docs/16/pgstatstatements.html
+- Role `pg_read_all_stats` cho `bench_ro`: https://www.postgresql.org/docs/16/predefined-roles.html
+- Redis `SET ... NX PX`: https://redis.io/docs/latest/commands/set/
+- Lock bằng Redis, nhả lock bằng Lua compare-and-delete, giới hạn khi failover: https://redis.io/docs/latest/develop/clients/patterns/distributed-locks/
+- Lua script chạy atomic: https://redis.io/docs/latest/develop/programmability/eval-intro/
+- Pool của `pg` (`max` mặc định 10, xếp hàng khi hết connection): https://node-postgres.com/apis/pool
