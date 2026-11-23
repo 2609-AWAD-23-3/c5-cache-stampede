@@ -1,6 +1,6 @@
 # AI-LOG fragment — Seminar C5 (Trần Quốc Vỹ)
 
-Log của Vỹ cho phần mình dùng AI: brainstorm, kế hoạch, review thiết kế, contract, khung repo và chia task (Task 0 trong `docs/ISSUES.md`). Đây là một fragment trong thư mục `ai/`; ở Task 10 Vỹ tổng hợp các fragment của cả nhóm thành `AI-LOG.md` ở root. Bản này tổng hợp theo bước từ các phiên Codex và Claude ngày 2026-11-17, không phải transcript. Thao tác assistant thực hiện không được ghi thành việc Vỹ làm tay; phần By hand chỉ ghi điều Vỹ tự làm hoặc tự quyết định.
+Log của Vỹ cho phần mình dùng AI: brainstorm, kế hoạch, review thiết kế, contract, khung repo và chia task (Task 0 trong `docs/ISSUES.md`). Đây là một fragment trong thư mục `ai/`; ở Task 10 Vỹ tổng hợp các fragment của cả nhóm thành `AI-LOG.md` ở root. Bản này tổng hợp theo bước từ các phiên Codex và Claude ngày 2026-11-17 và các phiên Claude ngày 2026-11-19, 20, 22 (review PR, fresh clone, Task 6), không phải transcript. Thao tác assistant thực hiện không được ghi thành việc Vỹ làm tay; phần By hand chỉ ghi điều Vỹ tự làm hoặc tự quyết định.
 
 ## 2026-11-17 — Bàn giao kế hoạch ban đầu
 
@@ -62,6 +62,47 @@ Log của Vỹ cho phần mình dùng AI: brainstorm, kế hoạch, review thi�
 - **By hand**: Vỹ quyết định để Vượng và Phúc làm phần kỹ thuật và chọn Vượng review các task trước khi đăng lên GitHub.
 - **Kiểm chứng**: Claude tính lại tổng giờ từ bảng issue bằng script, phát hiện bảng chat trước ghi sai (22.5 cho cả ba, thực tế 21.5 / 21.5 / 23), rồi bỏ hẳn giờ công khỏi bản cuối.
 
+## 2026-11-19 — Task 7: Claude review PR #17 và PR #18
+
+- **Tool**: Claude (Claude Code), `gh`.
+- **Asked for**: Kiểm hai PR của Vượng đang chờ review: contract v1.4 (PR #17) và Task 3 hạ tầng, calibrate, lock tests (PR #18), soạn comment để Vỹ chốt trước khi đăng.
+- **Kept**: Claude đối chiếu nội dung PR với code và contract (câu chữ mục 2/3/4.5, `SEED_REVIEWS` 300000, `review_count` 30000, pin image theo digest, healthcheck, `lock-tests.mjs`, `fault.test.mjs`). Cả hai PR được Vỹ approve và đã merge. Lưu ý số 1 trong review PR #18 là cấp `SELECT` trên `reviews` cho `bench_ro`; Vượng làm ở PR #21.
+- **Changed**: Không có thay đổi code từ Vỹ; thay đổi nằm ở PR của Vượng.
+- **Rejected**: Chưa có.
+- **By hand**: Vỹ yêu cầu "comment vào đây để chốt trước", rồi "Đăng cả hai và approve".
+- **Kiểm chứng**: Review đọc code và diff; kết quả chạy thật của Task 3 do Vượng ghi trong PR, chưa chạy lại trong bước này (fresh clone ở bước sau).
+
+## 2026-11-20 — Task 7: Fresh clone và sửa `checklist #N` bị GitHub autolink
+
+- **Tool**: Claude (Claude Code), Docker Desktop, `gh`.
+- **Asked for**: Chạy fresh clone sau khi PR #18 merge, trả lời comment của Vượng ở issue #5, rồi sửa các chỗ `checklist #N` bị GitHub tự gắn link sang issue hoặc PR.
+- **Kept**: Fresh clone chạy được trên máy Vỹ. Plain ra 186 query thay vì 200 (14 request gặp cache vì máy nhanh hơn); Claude ghi nhận là phụ thuộc máy, không phải lỗi. Cách sửa autolink: viết "checklist mục N". Đã sửa ở issue #5, issue #7, mô tả PR #18, các review của Claude trên PR #16 và #18, và comment của Vượng ở issue #5.
+- **Changed**: Vỹ chốt để Vượng tự điền mục 15 của checklist ("checklist 15 này chắc để vượng sửa luôn vì sửa trùng file có nguy cơ conflict") và chốt phạm vi sửa autolink: "tạm không cần sửa trong source", rồi "sửa hết luôn đi, vì vấn đề này cần sửa mặc dù đã được close".
+- **Rejected**: Chưa sửa các chỗ `#N` trong file nguồn ở bước này (hoãn đến lúc có PR docs).
+- **By hand**: Vỹ phát hiện link sai ("mấy cái #checklist đều đang bị lỗi dẫn đến là nó toàn link tới issue hay pr") và quyết định phạm vi sửa. Docker Desktop chưa chạy; Claude khởi động bằng PowerShell.
+- **Kiểm chứng**: Chạy `docker compose` từ bản clone mới tại `D:\Workspace\Web\seminar\fresh`, ghi log; số query đọc từ kết quả chạy.
+
+## 2026-11-22 — Task 7 và 5: Review PR #19, chốt `CACHE_TTL_MS`, contract v1.5 (PR #20)
+
+- **Tool**: Claude (Claude Code), `gh`.
+- **Asked for**: Review PR #19 của Phúc (pilot vòng 1), giải thích các điểm Phúc cần Vỹ quyết định (burst, calibrate, `CACHE_TTL_MS`), đăng comment, và sửa câu chữ `CACHE_TTL_MS` trong contract.
+- **Kept**: `CACHE_TTL_MS` giữ 3000. Claude giải thích TTL chỉ dùng để chờ key hết hạn trước mỗi burst, và "thời gian burst" nghĩa là thời gian gửi hết 200 request (`burst_span_ms`, ≤ 100 ms), không phải thời gian chờ xong của plain. Contract lên v1.5 (PR #20, Vỹ mở). Thư mục pilot đổi thành `results/pilot-r1/` (theo vòng, không theo ngày).
+- **Changed**: Claude đề xuất `results/pilot-<ngày>/`; Vỹ hỏi "nếu đổi thành results/pilot-20261122/, thì chạy pilot khác chung ngày cũng dính trùng tên folder mà bạn?" nên đổi sang đặt theo vòng. Review PR #19 đổi từ Approve sang Request changes (xem bảng lỗi), rồi Approve lại sau commit của Phúc và Approve lần nữa sau commit sửa dòng 5 của `docs/PILOT-CHECKLIST.md`.
+- **Rejected**: Claude dự định để câu "Vỹ sẽ chốt" trong comment đăng dưới tài khoản Vỹ; Vỹ sửa thành "mình chốt".
+- **By hand**: Vỹ hỏi lại các khái niệm chưa rõ ("brust là gì nhỉ?", "calibrate là gì, brust plain là thời gian bắn brust hay sao?"), quyết định giữ 3000, yêu cầu "thay đổi luôn đi" cho contract và yêu cầu đổi review sang Request changes.
+- **Kiểm chứng**: Claude đọc diff PR #19 và `results/pilot-r1/` (10/10 lượt `VALID`); chưa tính lại số pilot độc lập ở bước này.
+
+## 2026-11-22 — Task 5 và 6: Chốt đóng băng, review PR #21, kiểm độc lập và phân tích official
+
+- **Tool**: Claude (Claude Code), `gh`, Node.js.
+- **Asked for**: Soạn comment ở issue #7 để chốt đóng băng `[calibrate]`, số cặp và người chạy official; review PR #21 của Vượng (official 10 cặp); viết script kiểm độc lập và phân tích cho Task 6.
+- **Kept**: Comment ở issue #7 đề xuất giữ giá trị pilot, chạy 10 cặp, Vượng chạy official trên máy chuẩn; Phúc xác nhận. Review PR #21: Claude tính lại từ `requests.jsonl`, `snapshots` và `config.json` của 20 lượt (cùng commit `3682b13`, 20/20 hợp lệ, khớp `summary.json` và `report_table.md`), Vỹ approve, Vượng merge. Task 6: `benchmark/crosscheck/crosscheck.mjs` (không import `aggregate.js`), `results/official/crosscheck_report.md`, `docs/RESULT-ANALYSIS.md`; sửa phạm vi Task 6 và các `#N` trong `docs/ISSUES.md`. Kết quả đối chiếu PASS: median `delta_p95_ms` −3696.122 ms (p95 giảm), queries plain 200 (115–200) và coalesced 1.
+- **Changed**: Vỹ hỏi "đã có các lần chạy trước, nhưng cần lần chạy sau khi đóng băng hã?"; Claude giải thích contract coi pilot dùng để chốt cấu hình, official chạy sau đóng băng, nên không lấy số pilot làm kết quả. Claude đã viết bản đầu của script chạy trên pilot; Vỹ quyết định bỏ ("bỏ luôn cũng được, đợi máy chuẩn chạy rồi viết script sau"), bản đó bị xóa, và script được viết lại sau khi PR #21 merge. Câu về việc Vỹ bắt đầu Task 6 trong comment ở issue #7 được sửa lại cho rõ người mở PR gắn `Closes #7`.
+- **Rejected**: Dùng số pilot-r1 làm kết quả chính, và đăng bản nháp comment có lời chào ("không cần chào").
+- **By hand**: Vỹ quyết định phân công Task 5 và yêu cầu "hoàn thiện task6 đi, đừng commit vội để tôi check". Các câu hỏi về PR ("ủa nếu đợi máy chuẩn chạy thì commit ở issue nào?") do Vỹ đặt ra.
+- **Kiểm chứng**: Script chạy PASS trên `results/official` (20 lượt). Thử âm tính trên bản sao `results/official` bị sửa tay (một request đổi status 200 thành 500 và một giá trị p95 trong `summary.csv`): script báo lệch và thoát mã 1, bản sao đã xóa. Hai điểm là suy luận từ số liệu, không đo trực tiếp: query plain chậm do tranh CPU, và các lượt plain có hit đều có `burst_span_ms` lớn; `docs/RESULT-ANALYSIS.md` nêu rõ chưa kết luận nhân quả. Phần thời gian của coalesced không được log (khoảng 65 ms ở request p95) cũng ghi rõ là chưa giải thích được.
+- **Sau review của Phúc (PR #22)**: Phúc chỉ ra hai chỗ trong `docs/RESULT-ANALYSIS.md`: "khoảng 35 ms" nên là p50 32.9 ms từ file calibrate, và "request đến muộn" chưa chính xác vì `server_recv_ts` của request hit đầu tiên sớm hơn lúc cache được ghi. Đã sửa cả hai, đồng thời bỏ câu gán 65 ms không log cho "client hoặc event loop" vì nguồn chưa xác định. Ba góp ý nhỏ về `crosscheck.mjs` cũng đã làm: kiểm số request bằng `burst_size`, kiểm request status 200 thiếu `X-DB-Queries`, và kiểm payload chỉ trên request status 200. Thử âm tính: xóa một dòng request và xóa `db_queries` ở một request đều cho FAIL đúng lý do; official vẫn PASS.
+
 ## Lỗi assistant được phát hiện trong quá trình làm
 
 | # | Lỗi | Assistant | Cách phát hiện | Cách sửa |
@@ -73,3 +114,7 @@ Log của Vỹ cho phần mình dùng AI: brainstorm, kế hoạch, review thi�
 | 5 | Loại lượt coalesced có fallback khỏi median chính, làm kết quả đẹp hơn thực tế | Claude | review của Codex | v1.1: giữ trong median, báo cáo riêng |
 | 6 | Đặt ngưỡng "plain gần 200 query" như điều kiện pilot | Claude | review của Codex | v1.1: bỏ ngưỡng |
 | 7 | Bảng tổng giờ công ghi nhầm cho cả ba người | Claude | Claude tính lại từ bảng issue bằng script | sửa, sau đó bỏ giờ công |
+| 8 | Approve PR #19 trong khi comment ghi "nên sửa trước khi Task 7 chạy fresh clone" (chuyển `results/pilot/` sang `results/pilot-r1/`), nên Phúc có thể merge mà chưa sửa | Claude | Vỹ chỉ ra: "vậy mà bạn là approve :)) troll tôi hã, rút kinh nghiệm nhé" | đổi sang Request changes, Approve lại sau commit của Phúc; ghi thành quy tắc: điểm phải sửa trước merge thì Request changes |
+| 9 | Bản nháp comment dưới tài khoản Vỹ viết "Vỹ sẽ chốt" | Claude | Vỹ đọc bản nháp: "không phải là tôi sẽ chốt à" | đổi thành "mình chốt" |
+| 10 | Viết `checklist #N` trong review và comment, GitHub tự gắn link sang issue hoặc PR cùng số | Claude | Vỹ thấy link sai trong issue #5 | đổi thành "checklist mục N" ở các chỗ đã đăng; trong file nguồn đã sửa `docs/ISSUES.md`, còn `docs/PILOT-CHECKLIST.md` (dòng 26 và 31) và `app/test/calibrate-query.mjs` (dòng 34) |
+| 11 | Bản đầu script Task 6 tính `median_query_ms` trên mọi request, lệch `summary.json` của coalesced (0 so với 10.039 ms) | Claude | chạy đối chiếu trên pilot-r1 | tính trên request có `db_queries > 0`; định nghĩa này `aggregate.js` đang dùng, contract chưa ghi |
