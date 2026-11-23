@@ -89,7 +89,9 @@ for (const id of runDirs) {
   // validity theo CONTRACT mục 8
   const why = [];
   if (mine.n_error > 0) why.push('status!=200');
-  if (reqs.some((r) => r.payload_sha256 !== cfg.baseline_payload_sha256)) why.push('payload!=baseline');
+  if (reqs.length !== cfg.burst_size) why.push('n_requests!=burst_size');
+  if (ok.some((r) => r.payload_sha256 !== cfg.baseline_payload_sha256)) why.push('payload!=baseline');
+  if (ok.some((r) => !Number.isFinite(r.db_queries))) why.push('missing-x-db-queries');
   if (cfg.expiry_confirmed !== true) why.push('expiry-not-confirmed');
   if (mine.burst_span_ms > BURST_SPAN_MAX_MS) why.push('burst_span>100ms');
   if (mine.sum_db_queries_from_headers !== mine.queries_per_expiry) why.push('queries-mismatch');
