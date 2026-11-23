@@ -40,12 +40,11 @@ Lưu ý: "29.9.3" là số của Docker Engine, không phải của Docker Deskt
 ## 4. Điểm đã sửa và điểm còn mở
 
 - Đã sửa: nhãn "Docker Desktop 29.9.3" thành "Docker Engine 29.9.3" (`docs/PILOT-CHECKLIST.md`); các `#N` chỉ checklist trong `docs/PILOT-CHECKLIST.md`, `app/test/calibrate-query.mjs` và `app/test/lock-tests.mjs` thành "mục N" (các `#N` chỉ issue hoặc PR thật được giữ).
-- Còn mở, cần Phúc xử lý khi cập nhật README và `REPORT.md`: `README.md` dòng 15 ghi "Compose v2" trong khi Compose hiện là 5.x; ghi số version thật ("Compose v5.7.0" cho máy chuẩn).
-- Cần Phúc ghi vào README: máy đã từng chạy bản cũ cần `docker compose build` (xem mục 5).
+- Đã sửa ở PR #23 (Phúc): `README.md` mục "Yêu cầu" trước đây ghi "Compose v2", nay ghi Compose 5.x (máy chuẩn v5.7.0); README mục "Môi trường đo chính thức" ghi Docker Engine 29.9.3; README có thêm lưu ý máy đã từng chạy bản cũ cần build lại image (xem mục 5).
 - Chưa xác minh: Engine 29.6.1 trên máy Vỹ chưa đối chiếu release notes (không ảnh hưởng kết quả official vì official chạy trên máy chuẩn).
 
 ## 5. Fresh clone lần cuối (máy Vỹ, sau đóng băng)
 
 - Clone `main` tại commit `8e97ebd` (có `results/official/`), `cp .env.example .env`, `PAIRS=1 docker compose run --rm benchmark` (RESULTS_KIND mặc định `pilot`, không đụng `results/official/`). Docker Engine 29.6.1, Compose v5.3.0, Windows.
 - Kết quả: 2/2 lượt hợp lệ, `config.json` ghi `git_commit` `8e97ebd`, `seed_reviews_count` 300000 (đếm bằng `count(*)` nhờ dòng `GRANT SELECT ON reviews TO bench_ro` của PR #21), Node v22.23.5. Plain 121 query, coalesced 1 query, `delta_p95_ms` −1487.062 ms (dấu âm giống official). Số query của plain phụ thuộc máy (đã nêu trong `docs/RESULT-ANALYSIS.md`), nên không so với official.
-- Lượt chạy đầu dùng nhầm image cũ: máy đã có image `c5-cache-stampede-benchmark` và `-app1/-app2` dựng từ lần clone ngày 20/11, `docker compose run` không dựng lại, nên `config.json` thiếu `seed_reviews_count` (code runner cũ). Sau khi xóa ba image này và chạy lại thì đủ. Máy hoàn toàn mới không gặp lỗi này, nhưng máy đã từng chạy bản cũ cần `docker compose build` (hoặc xóa image) trước; nên ghi vào README (việc của Phúc).
+- Lượt chạy đầu dùng nhầm image cũ: máy đã có image `c5-cache-stampede-benchmark` và `-app1/-app2` dựng từ lần clone ngày 20/11, `docker compose run` không dựng lại, nên `config.json` thiếu `seed_reviews_count` (code runner cũ). Sau khi xóa ba image này và chạy lại thì đủ. Máy hoàn toàn mới không gặp lỗi này, nhưng máy đã từng chạy bản cũ cần `docker compose build` (hoặc xóa image) trước; lưu ý này đã được thêm vào README ở PR #23.
