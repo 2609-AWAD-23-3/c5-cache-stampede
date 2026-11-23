@@ -18,6 +18,7 @@ Tài liệu kỹ thuật: [CONTRACT.md](CONTRACT.md). Báo cáo: [REPORT.md](REP
   - Máy chuẩn (Vượng): Docker Engine `29.9.3`, Docker Compose `v5.7.0` (Docker Desktop `4.99.0`, Windows 11 + WSL2; theo [docs/SOURCES.md](docs/SOURCES.md) mục 2).
   - Máy pilot (Phúc): Docker Engine `28.5.1` (theo [docs/SOURCES.md](docs/SOURCES.md) mục 2), Docker Compose `v2.40.3-desktop.1` (lấy từ `docker compose version` trên máy Phúc, Windows 11 + WSL2).
   - Máy kiểm chứng fresh clone (Vỹ): Docker Engine `29.6.1`, Docker Compose `v5.3.0` (Windows; theo [docs/SOURCES.md](docs/SOURCES.md) mục 2).
+- **Docker phải đang chạy:** trên Windows và macOS, mở Docker Desktop và đợi engine chạy xong (lệnh `docker info` không báo lỗi) trước khi chạy các lệnh bên dưới. Trên Windows, nếu Docker Desktop chưa chạy, lệnh `docker` báo lỗi `failed to connect to the docker API at npipe:////./pipe/dockerDesktopLinuxEngine`.
 - **CPU / RAM:** Tổng giới hạn `cpus` của 5 container trong `compose.yaml` là **6** (`app1=1`, `app2=1`, `postgres=2`, `redis=1`, `benchmark=1`). Máy ít CPU hơn vẫn chạy được, nhưng giá trị độ trễ tuyệt đối (`ms`) sẽ khác.
 - **Git** và kết nối mạng (lần đầu để pull image `postgres:16.16`, `redis:7.4.12`, `node:22.23.5-alpine` và chạy `npm ci` trong Docker build). Không cần cài Node.js hay PostgreSQL trên máy (chỉ cần Node 22 nếu chạy các lệnh kiểm tra tùy chọn).
 
@@ -109,7 +110,37 @@ Runner ghi toàn bộ dữ liệu đo vào `results/<RESULTS_KIND>/` (mặc đ�
 - **Máy đã từng chạy bản cũ cần build lại toàn bộ image:** `docker compose run` không tự dựng lại image đã có sẵn trên máy. Khi kéo commit mới về, chạy `docker compose --profile bench build` trước khi chạy lại (lưu ý `docker compose build` không có `--profile bench` sẽ bỏ qua service `benchmark`).
 
 ## Kiểm lại số official (tùy chọn)
-<!-- Vỹ -->
+
+Phần này dùng để kiểm các số trong `REPORT.md` từ raw log đã commit trong `results/official/`, **không cần chạy lại benchmark** và không cần stack Docker đang chạy. Hai script dưới đây chỉ dùng thư viện chuẩn của Node, không cần `npm install`.
+
+| Script | Làm gì |
+| --- | --- |
+| `benchmark/crosscheck/crosscheck.mjs` | Kiểm độc lập (Task 6), không dùng chung code với `aggregate.js`. Đọc `requests.jsonl`, `snapshots/before.json`, `snapshots/after.json` và `config.json` của từng lượt, tính lại p95, p50, queries/expiry, `burst_span_ms`, validity, `delta_p95_ms` theo cặp, median và min–max, rồi so với `summary.json`, `summary.csv` và `report_table.md`. |
+| `benchmark/src/aggregate.js` | Bộ tổng hợp chính, chính là script chạy ở cuối mỗi lần benchmark. Đọc mọi `<run_id>/` trong thư mục và ghi lại `summary.csv`, `report_table.md`. |
+
+**Cách 1, máy có Node 22 trở lên.** Chạy ở thư mục gốc của repo:
+
+```bash
+node benchmark/crosscheck/crosscheck.mjs results/official
+node benchmark/src/aggregate.js results/official
+git diff --stat results/official
+```
+
+**Cách 2, chỉ có Docker.** Dùng đúng image Node đã pin cho app và benchmark. Lệnh dưới đây đã chạy thử trong PowerShell:
+
+```powershell
+docker run --rm -v "${PWD}:/w" -w /w node:22.23.5-alpine@sha256:1314fb30ec37592d5845e5a160d522c0e680972aa534549940b8d73bde88481a node benchmark/crosscheck/crosscheck.mjs results/official
+docker run --rm -v "${PWD}:/w" -w /w node:22.23.5-alpine@sha256:1314fb30ec37592d5845e5a160d522c0e680972aa534549940b8d73bde88481a node benchmark/src/aggregate.js results/official
+git diff --stat results/official
+```
+
+**Kết quả đúng trông thế nào:**
+
+- `crosscheck.mjs` in dòng cuối `**PASS**: mọi số tính lại khớp summary.json, summary.csv và report_table.md.` và thoát với mã 0. Nếu có chỗ lệch, script in `**FAIL**: <số> điểm lệch` kèm danh sách từng chỗ và thoát với mã 1.
+- `aggregate.js` in lại bảng tổng hợp (`Valid runs: **20** / 20 total`, rồi các bảng median (min–max), theo cặp và từng lượt), đồng thời ghi đè `results/official/summary.csv` và `results/official/report_table.md`.
+- `git diff --stat results/official` **không in gì** nghĩa là hai file vừa ghi lại giống hệt bản đã commit, tức số trong report tính lại được từ log. Trên Windows, `git status` có thể vẫn báo hai file này là `modified` chỉ vì khác ký tự xuống dòng; `git diff` rỗng thì nội dung không đổi. Trả lại bản gốc bằng `git checkout -- results/official`.
+
+Bản đầy đủ của phép kiểm độc lập, có `run_id` và số dòng trong log cho từng số, nằm ở `results/official/crosscheck_report.md` (tạo lại bằng cách thêm `--out results/official/crosscheck_report.md` vào lệnh crosscheck). Phần giải thích nguyên nhân từ log nằm ở `docs/RESULT-ANALYSIS.md`.
 
 ## Test phụ (tùy chọn)
 
@@ -131,10 +162,12 @@ Các script trong `app/test/` kiểm riêng service và lock, không cần để
 | `app/` | Vượng | service Node.js, hai mode cache |
 | `db/init/` | Vượng | extension, role, schema, seed xác định |
 | `compose.yaml` | Vượng | topology (stanza `benchmark`: Phúc) |
-| `benchmark/` | Phúc | runner, tổng hợp |
-| `results/` | Phúc | raw output (`pilot/`, `official/`) |
-| `CONTRACT.md`, `docs/`, `TALK.md`, `slides.pdf`, `SELF_ASSESSMENT_REPORT.md`, bộ aggregate | Vỹ | contract, tài liệu gốc và bộ nộp |
-| `README.md` | Phúc | hướng dẫn chạy, điền môi trường đo |
+| `benchmark/` | Phúc | runner (`src/run.js`), tổng hợp (`src/aggregate.js`) |
+| `benchmark/crosscheck/` | Vỹ | kiểm độc lập số official (mục "Kiểm lại số official") |
+| `results/` | Phúc | raw output: `official/` (bộ số trong REPORT), `pilot/` (mặc định khi chạy lại), `pilot-r1/` (pilot máy Phúc), `calibration/` và `calibration-cpus/` (hiệu chỉnh query và `cpus`), `lock-tests/` (test lock mục 10–14) |
+| `CONTRACT.md`, `docs/` | Vỹ | contract, nguồn (`docs/SOURCES.md`), phân tích kết quả (`docs/RESULT-ANALYSIS.md`), checklist pilot |
+| `TALK.md`, `slides.pdf`, `SELF_ASSESSMENT_REPORT.md` | Vỹ | bộ nộp, thêm ở Task 9–10 |
+| `README.md` | Phúc (mục "Kiểm lại số official": Vỹ; "Test phụ": Vượng) | hướng dẫn chạy, điền môi trường đo |
 | `REPORT.md` | cả ba (mỗi người viết phần của mình), Vỹ ghép | xem `docs/ISSUES.md` |
 | `ai/<tên>/AI-LOG.md` | từng người | log AI riêng; `AI-LOG.md` ở root do Vỹ tổng hợp ở Task 10 |
 

@@ -1,6 +1,6 @@
 # Issue board C5 (v5, 18/11/2026)
 
-12 issue (Task 0 đã xong). Mỗi mục là một GitHub issue: assignee, milestone. **Quy ước:** title của issue và PR viết bằng tiếng Anh (cột "Title" bên dưới); description và nội dung viết bằng tiếng Việt cho dễ đọc. Việc nhỏ (review, README, AI-LOG…) nằm trong checklist của task lớn, không tách issue riêng.
+12 issue. Task 0–7 đã xong (issue #1, #4–#9 đã đóng); Task 8–11 đang mở. Mỗi mục là một GitHub issue: assignee, milestone. **Quy ước:** title của issue và PR viết bằng tiếng Anh (cột "Title" bên dưới); description và nội dung viết bằng tiếng Việt cho dễ đọc. Việc nhỏ (review, README, AI-LOG…) nằm trong checklist của task lớn, không tách issue riêng.
 
 | Mốc | Hạn | Nội dung |
 | --- | --- | --- |
@@ -18,13 +18,13 @@ Nếu trễ, cắt theo thứ tự: sensitivity poll 1/20 ms, mức tải 20 req
 | Task | Title (tiếng Anh, dùng làm title issue) | Tên | Assignee | Mốc | Phụ thuộc |
 | ---: | --- | --- | --- | --- | --- |
 | 0 | Task 0: Brainstorm, plan, design review, contract and repo skeleton | Brainstorm, kế hoạch, review thiết kế, contract và khung repo | **Vỹ** (đã xong) | — | — |
-| 1 | Task 1: Create public repo and finalize contract | Tạo repo public và chốt contract | Vỹ | M1 | 0 |
-| 2 | Task 2: Service with plain and coalesced cache modes | Service: hai mode cache | Vượng | M2 | 1 |
-| 3 | Task 3: Infrastructure, calibration and lock tests | Hạ tầng, calibrate và test lock | Vượng | M2 | 2 |
-| 4 | Task 4: Benchmark runner | Runner đo | Phúc | M2 | 1 |
-| 5 | Task 5: Pilot, freeze and official runs | Pilot, đóng băng và chạy official | Phúc | M3 | 2, 3, 4 |
-| 6 | Task 6: Aggregation and result analysis | Aggregate và phân tích kết quả | Vỹ | M2 (kiểm độc lập), M4 (phân tích) | 4, 5 |
-| 7 | Task 7: Cross-review, source verification and fresh clone | Review chéo, kiểm nguồn và fresh clone | Vỹ | M3 | 2, 3, 4 |
+| 1 | Task 1: Create public repo and finalize contract | Tạo repo public và chốt contract | **Vỹ** (đã xong, issue #1 đã đóng) | M1 | 0 |
+| 2 | Task 2: Service with plain and coalesced cache modes | Service: hai mode cache | **Vượng** (đã xong, issue #4 đã đóng) | M2 | 1 |
+| 3 | Task 3: Infrastructure, calibration and lock tests | Hạ tầng, calibrate và test lock | **Vượng** (đã xong, issue #5 đã đóng) | M2 | 2 |
+| 4 | Task 4: Benchmark runner | Runner đo | **Phúc** (đã xong, issue #6 đã đóng) | M2 | 1 |
+| 5 | Task 5: Pilot, freeze and official runs | Pilot, đóng băng và chạy official | **Phúc** (đã xong, issue #7 đã đóng) | M3 | 2, 3, 4 |
+| 6 | Task 6: Aggregation and result analysis | Aggregate và phân tích kết quả | **Vỹ** (đã xong, issue #8 đã đóng) | M2 (kiểm độc lập), M4 (phân tích) | 4, 5 |
+| 7 | Task 7: Cross-review, source verification and fresh clone | Review chéo, kiểm nguồn và fresh clone | **Vỹ** (đã xong, issue #9 đã đóng) | M3 | 2, 3, 4 |
 | 8 | Task 8: REPORT and README | REPORT và README | Vỹ (Vượng và Phúc viết phần của mình) | M4 | 5, 6 |
 | 9 | Task 9: Slides and video | Slides và video | cả ba (Vỹ ghép) | M4 | 8 |
 | 10 | Task 10: AI-LOG merge, self-assessment, ZIP and submission | AI-LOG, tự chấm, ZIP và nộp | Vỹ (Vượng và Phúc giữ log riêng trong `ai/`) | M5 | 8, 9 |
@@ -43,47 +43,41 @@ Phân bổ: **Vượng** Task 2, 3 (+ phần trong 8, 9, 10). **Phúc** Task 4, 
 
 Log AI của Task 0 nằm ở `ai/vy/AI-LOG.md` (đã viết): khung repo và contract do Claude viết, các lỗi Claude mắc và cách phát hiện. `AI-LOG.md` ở root để trống đến Task 10.
 
-## Task 1: Tạo repo public và chốt contract — Vỹ — M1 18/11
-
+## Task 1: Tạo repo public và chốt contract — Vỹ — M1 18/11 — ĐÃ XONG
 - `git init`, tạo repo public trên GitHub, push khung `c5-repo/`, tạo milestone M1–M6 và các issue Task 2–11.
 - Mời Vượng và Phúc đọc `CONTRACT.md` v1.1; mỗi người comment xác nhận hoặc đề xuất sửa trong PR.
 - Mọi thay đổi contract đi qua PR và ghi vào lịch sử thay đổi.
 
 Xong khi: cả ba clone được repo và đã xác nhận contract.
 
-## Task 2: Service — hai mode cache — Vượng — M2 20/11
-
+## Task 2: Service — hai mode cache — Vượng — M2 20/11 — ĐÃ XONG
 - `app/`: `GET /products/:id` cho `plain` và `coalesced` theo `CONTRACT.md` mục 2–4, đủ header, Lua release, waiter poll/timeout/fallback.
 - `/healthz` kiểm Redis và Postgres thật; `/config` đúng cấu trúc v1.1.
 
 Xong khi: payload hai mode khớp hash; cache hit cho `X-DB-Queries=0`; một request sau expiry cho 1 query; PR có Vỹ review.
 
-## Task 3: Hạ tầng, calibrate và test lock — Vượng — M2 20/11 (test lock xong trước pilot 21/11)
-
+## Task 3: Hạ tầng, calibrate và test lock — Vượng — M2 20/11 (test lock xong trước pilot 21/11) — ĐÃ XONG
 - Rà `compose.yaml`, seed; calibrate hạ tầng (`SEED_REVIEWS`, `cpus`) trên máy chuẩn xong 20/11; ghi số đo. Các giá trị `[calibrate]` khác (`CACHE_TTL_MS`, lease, poll…) chốt trong pilot 20–21/11.
 - Test lock chủ ý (checklist mục 10–14): recheck, thứ tự ghi cache trước nhả lock, lease ngắn hơn query, giết holder, waiter timeout. Mỗi case có log.
 - Chạy fresh clone trên máy Vượng, làm đúng README, `PAIRS=1`.
 
 Xong khi: checklist mục 9–14 có evidence; fresh clone chạy được trên máy thứ hai. Nếu đã cắt "máy thứ hai" thì chỉ cần fresh clone trên máy chuẩn.
 
-## Task 4: Runner đo — Phúc — M2 20/11
-
+## Task 4: Runner đo — Phúc — M2 20/11 — ĐÃ XONG
 - `benchmark/` theo `CONTRACT.md` mục 6–8: kiểm `/healthz` và `/config`, warm-up, chờ expiry thật, snapshot `pg_stat_statements`, burst 200 qua hai instance (keep-alive, monotonic clock), ghi `requests.jsonl`, `summary.json`, validity, thứ tự cặp xen kẽ.
 - Một command: `docker compose run --rm benchmark`; cuối lệnh gọi `benchmark/src/aggregate.js` (Task 6) để in bảng số liệu.
 - Phát triển song song bằng stub service, không chờ Task 2.
 
 Xong khi: chạy được một cặp từ fresh clone, log đủ field, lượt invalid giữ log kèm `invalid_reasons`; PR có Vỹ review.
 
-## Task 5: Pilot, đóng băng và chạy official — Phúc — M3 22/11 (pilot 21/11, đóng băng 21/11, official 22/11)
-
+## Task 5: Pilot, đóng băng và chạy official — Phúc — M3 22/11 (pilot 21/11, đóng băng 21/11, official 22/11) — ĐÃ XONG
 - Chạy pilot 5 lượt mỗi mode, điền `docs/PILOT-CHECKLIST.md` kèm evidence (mục 6, 7 chỉ cần phép đo hợp lệ, không có ngưỡng đạt/trượt).
 - Cùng Vỹ đóng băng giá trị `[calibrate]` rồi ghi vào contract và README.
 - Chạy official 10 cặp xen kẽ trên máy chuẩn, ghi môi trường và commit, commit `results/official/`.
 
 Xong khi: checklist đủ evidence; `results/official/` có mọi lượt kể cả lượt invalid kèm lý do.
 
-## Task 6: Aggregate và phân tích kết quả — Vỹ — M2 (kiểm độc lập xong 22/11), phân tích xong 23/11
-
+## Task 6: Aggregate và phân tích kết quả — Vỹ — M2 (kiểm độc lập xong 22/11), phân tích xong 23/11 — ĐÃ XONG
 `benchmark/src/aggregate.js` do Phúc viết trong PR #15 (Task 4) và được giữ làm bản chính; Task 6 không viết lại file này.
 
 - Kiểm độc lập các số chính bằng script riêng (`benchmark/crosscheck/crosscheck.mjs`), **không import** `aggregate.js`: đọc `requests.jsonl` và snapshot của từng lượt, tính lại p95 nearest-rank, `queries_per_expiry`, `delta_p95_ms` theo cặp, median và min–max, rồi đối chiếu với `summary.csv` và `report_table.md`. Lệch ở đâu thì báo Phúc sửa `aggregate.js`.
@@ -92,8 +86,7 @@ Xong khi: checklist đủ evidence; `results/official/` có mọi lượt kể c
 
 Xong khi: tính lại độc lập được các con số chính từ `requests.jsonl` và khớp với `aggregate.js`.
 
-## Task 7: Review chéo, kiểm nguồn và fresh clone — Vỹ — review PR xong trước 21/11, phần còn lại 22/11
-
+## Task 7: Review chéo, kiểm nguồn và fresh clone — Vỹ — review PR xong trước 21/11, phần còn lại 22/11 — ĐÃ XONG
 - Review PR của Task 2, 3, 4 theo mẫu bàn giao trong `context.md`; gửi Claude review khi cần. **Xong trước khi đóng băng (≤ 21/11)** để lỗi service/runner không buộc chạy lại official.
 - Phần dưới đây giữ hạn 22/11:
 - Kiểm official docs và release notes (Redis, Postgres, Docker, Node): version, ngày đọc cho mục "Nguồn".
@@ -106,6 +99,7 @@ Xong khi: không còn finding mở; mỗi claim về version có link kèm ngày
 - Vượng: Setup, baseline và thay đổi, thiết kế lock, giới hạn của lock.
 - Phúc: Kết quả, spread, README (điền môi trường đo).
 - Vỹ: Câu hỏi, Khuyến nghị và khi nên tránh, Nguồn; ghép và cắt còn ≤ 3 trang, link repo ở dòng đầu.
+- Quyết định khi ghép (23/11): không cắt `REPORT.md` xuống 3 trang. Bản ghép khoảng 3500 từ, in A4 khoảng 10 trang; cắt còn 3 trang phải bỏ hơn một nửa phần giải thích. Nhóm chấp nhận bị trừ điểm và tự trừ phần này trong `SELF_ASSESSMENT_REPORT.md` (Task 10).
 
 Xong khi: đủ mục theo đề, số trùng log, một người ngoài làm theo README chạy được `PAIRS=1`.
 

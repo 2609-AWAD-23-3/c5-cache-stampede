@@ -14,3 +14,4 @@ Template. Điền ở Task 10 theo mẫu trên Classroom; bảng tổng phải k
 
 ## Chưa làm được
 <!-- ngắn gọn -->
+- `REPORT.md` vượt giới hạn tối đa 3 trang của đề (khoảng 3500 từ, in A4 khoảng 10 trang). Nhóm chọn giữ phần giải thích thay vì cắt (quyết định ngày 23/11, `docs/ISSUES.md` Task 8), và tự trừ điểm cho phần này khi chấm.

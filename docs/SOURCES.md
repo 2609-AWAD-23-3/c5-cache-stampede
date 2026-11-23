@@ -20,7 +20,7 @@ Ngày đọc: **23/11/2026**. Người kiểm: Vỹ (có hỗ trợ Claude; tran
 | Máy | Docker | Nguồn / ghi chú |
 | --- | --- | --- |
 | Máy chuẩn (Vượng), official 22/11 | Docker Engine 29.9.3, Compose v5.7.0 | Docker Desktop 4.99.0 (2026-11-09) đi kèm Engine v29.9.3 và Compose v5.7.0: https://docs.docker.com/desktop/release-notes/ ; Engine 29.9.3 phát hành 2026-11-03: https://docs.docker.com/engine/release-notes/29/ |
-| Máy pilot (Phúc) | Docker Engine 28.5.1 | Engine 28.5.1 phát hành 2025-10-08: https://docs.docker.com/engine/release-notes/28/ |
+| Máy pilot (Phúc) | Docker Engine 28.5.1, Compose v2.40.3-desktop.1 | Engine 28.5.1 phát hành 2025-10-08: https://docs.docker.com/engine/release-notes/28/ ; Compose lấy từ `docker compose version` trên máy Phúc (Phúc báo ở PR #27), chưa đối chiếu release notes |
 | Máy Vỹ (fresh clone 23/11) | Docker Engine 29.6.1, Compose v5.3.0 | Lấy từ `docker version` và `docker compose version` trên máy; chưa đối chiếu release notes |
 
 Lưu ý: "29.9.3" là số của Docker Engine, không phải của Docker Desktop (Docker Desktop đánh số 4.x). Compose hiện đánh số 5.x (bản mới nhất 5.8.0, 2026-11-17): https://github.com/docker/compose/releases
@@ -39,7 +39,7 @@ Lưu ý: "29.9.3" là số của Docker Engine, không phải của Docker Deskt
 
 ## 4. Điểm đã sửa và điểm còn mở
 
-- Đã sửa: nhãn "Docker Desktop 29.9.3" thành "Docker Engine 29.9.3" (`docs/PILOT-CHECKLIST.md`); các `#N` chỉ checklist trong `docs/PILOT-CHECKLIST.md`, `app/test/calibrate-query.mjs` và `app/test/lock-tests.mjs` thành "mục N" (các `#N` chỉ issue hoặc PR thật được giữ).
+- Đã sửa: nhãn "Docker Desktop 29.9.3" thành "Docker Engine 29.9.3" (`docs/PILOT-CHECKLIST.md`); các `#N` chỉ checklist trong `docs/PILOT-CHECKLIST.md`, chuỗi `target` mà `app/test/calibrate-query.mjs` ghi vào evidence và một comment trong `app/test/lock-tests.mjs` thành "mục N" (các `#N` chỉ issue hoặc PR thật được giữ). Các comment còn lại trong hai file `.mjs` vẫn ghi `#N`; GitHub không tự gắn link trong file code nên không đổi.
 - Đã sửa ở PR #23 (Phúc): `README.md` mục "Yêu cầu" trước đây ghi "Compose v2", nay ghi Compose 5.x (máy chuẩn v5.7.0); README mục "Môi trường đo chính thức" ghi Docker Engine 29.9.3; README có thêm lưu ý máy đã từng chạy bản cũ cần build lại image (xem mục 5).
 - Chưa xác minh: Engine 29.6.1 trên máy Vỹ chưa đối chiếu release notes (không ảnh hưởng kết quả official vì official chạy trên máy chuẩn).
 
