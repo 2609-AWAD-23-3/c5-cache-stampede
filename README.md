@@ -48,6 +48,19 @@ Dọn dẹp:
 docker compose down -v
 ```
 
+## Test phụ (tùy chọn)
+
+Các script trong `app/test/` kiểm riêng service và lock, không cần để chạy benchmark. Cần Node 22 trên máy (không cần `npm ci`); chạy trong thư mục `app/`. `test:smoke`, `test:lock` và `calibrate` cần stack đang chạy (`docker compose up -d --wait app1 app2`).
+
+| Lệnh | Kiểm gì |
+| --- | --- |
+| `npm test` | nhánh recheck và lỗi Redis của `app/src/products.js` bằng Redis giả; không cần Docker |
+| `npm run test:smoke` | payload hai mode cùng SHA-256, cache hit cho 0 query, một request sau expiry cho 1 query |
+| `npm run test:lock` | test lock mục 10–14 của `docs/PILOT-CHECKLIST.md`; ghi bằng chứng vào `results/lock-tests/<thời điểm>/` |
+| `npm run calibrate` | đo thời gian query đơn lẻ (mục 9); ghi vào `results/calibration/` |
+
+`test:lock` đổi trạng thái stack (đổi `LOCK_LEASE_MS`, `kill` app1, `pause` Postgres) rồi trả về cấu hình mặc định sau mỗi case, nên đừng chạy cùng lúc với benchmark.
+
 ## Cấu trúc
 
 | Đường dẫn | Chủ sở hữu | Nội dung |
