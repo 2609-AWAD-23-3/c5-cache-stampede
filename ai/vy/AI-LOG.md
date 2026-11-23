@@ -141,6 +141,12 @@ Log của Vỹ cho phần mình dùng AI: brainstorm, kế hoạch, review thi�
   - Quét checkbox chưa tick ở mọi issue. Tick hộ Phúc 2 mục tự nhắc trên issue #7 (Task 5): `results/official/` có đúng 20 thư mục lượt, không gộp trùng; README có lưu ý chạy vào thư mục sạch.
   - `docs/ISSUES.md`: đánh dấu Task 1–7 đã xong (issue #1, #4–#9 đã đóng). Thêm quyết định không cắt REPORT vào Task 8.
   - `SELF_ASSESSMENT_REPORT.md`: ghi việc vượt 3 trang vào "Chưa làm được" để Task 10 tự trừ điểm.
+- **Chạy thử `PAIRS=1` theo README** (mục cuối của Task 8):
+  - Claude viết prompt để một session Claude Code khác đóng vai người ngoài nhóm: chỉ dùng README, clone vào thư mục mới, không xóa image cũ, và chỉ đăng kết quả lên issue #10 khi Vỹ đồng ý.
+  - Session đó chạy được trên commit `9e4934d`: 2/2 `VALID`; `plain` 118 query, p95 1437.259 ms; `coalesced` 1 query, p95 89.552 ms; delta −1347.707 ms.
+  - Claude đối chiếu bản nháp comment với `results/pilot/summary.csv` của bản clone đó: khớp.
+  - Giới hạn: máy chạy là máy Vỹ, đã có sẵn image nền, nên chưa kiểm bước pull và `npm ci` lần đầu. Người chạy là AI, không phải người thật ngoài nhóm.
+  - Chỗ README thiếu mà session đó tìm ra: không nói phải mở Docker Desktop trước khi chạy. Đã thêm một ý vào mục "Yêu cầu" của README (phần của Phúc).
 
 ## Lỗi assistant được phát hiện trong quá trình làm
 

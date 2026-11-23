@@ -18,6 +18,7 @@ Tài liệu kỹ thuật: [CONTRACT.md](CONTRACT.md). Báo cáo: [REPORT.md](REP
   - Máy chuẩn (Vượng): Docker Engine `29.9.3`, Docker Compose `v5.7.0` (Docker Desktop `4.99.0`, Windows 11 + WSL2; theo [docs/SOURCES.md](docs/SOURCES.md) mục 2).
   - Máy pilot (Phúc): Docker Engine `28.5.1` (theo [docs/SOURCES.md](docs/SOURCES.md) mục 2), Docker Compose `v2.40.3-desktop.1` (lấy từ `docker compose version` trên máy Phúc, Windows 11 + WSL2).
   - Máy kiểm chứng fresh clone (Vỹ): Docker Engine `29.6.1`, Docker Compose `v5.3.0` (Windows; theo [docs/SOURCES.md](docs/SOURCES.md) mục 2).
+- **Docker phải đang chạy:** trên Windows và macOS, mở Docker Desktop và đợi engine chạy xong (lệnh `docker info` không báo lỗi) trước khi chạy các lệnh bên dưới. Trên Windows, nếu Docker Desktop chưa chạy, lệnh `docker` báo lỗi `failed to connect to the docker API at npipe:////./pipe/dockerDesktopLinuxEngine`.
 - **CPU / RAM:** Tổng giới hạn `cpus` của 5 container trong `compose.yaml` là **6** (`app1=1`, `app2=1`, `postgres=2`, `redis=1`, `benchmark=1`). Máy ít CPU hơn vẫn chạy được, nhưng giá trị độ trễ tuyệt đối (`ms`) sẽ khác.
 - **Git** và kết nối mạng (lần đầu để pull image `postgres:16.16`, `redis:7.4.12`, `node:22.23.5-alpine` và chạy `npm ci` trong Docker build). Không cần cài Node.js hay PostgreSQL trên máy (chỉ cần Node 22 nếu chạy các lệnh kiểm tra tùy chọn).
 
