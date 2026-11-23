@@ -32,10 +32,14 @@ Số liệu lấy từ `results/official/report_table.md` và được tính l�
 
 ## 2. Setup
 ### 2.1 Môi trường và version
-<!-- Vượng -->
+- **Máy chuẩn (máy Vượng):** AMD Ryzen 7 H 260 (8 nhân, 16 luồng), RAM 31.3 GB, Windows 11 Home 10.0.26300. Docker Engine 29.9.3, Compose v5.7.0; container chạy trong máy ảo WSL2 (16 CPU, 15.3 GB). Chi tiết ở README, mục "Môi trường đo chính thức".
+- **Container:** PostgreSQL 16.16, Redis 7.4.12, Node.js 22.23.5 (Alpine 3.24.4), thư viện `pg` 8.23.1 và `redis` 4.7.1, pin theo digest (mục 7). Giới hạn CPU: `app1` 1, `app2` 1, `postgres` 2, `redis` 1, runner 1.
+- **Lần đo chính thức:** commit `3682b13`, ngày 22/11/2026, 10 cặp.
 
 ### 2.2 Data và query
-<!-- Vượng -->
+- **Dữ liệu:** database `shop` có `products` (10 dòng) và `reviews` (300000 dòng), seed xác định (không dùng `random()`). Mỗi product có 30000 review; product 1 là key nóng.
+- **Query:** đếm review và tính điểm trung bình của product 1 (`LEFT JOIN`, `GROUP BY`; câu đầy đủ ở `CONTRACT.md` mục 3). Cột `reviews.product_id` cố ý không có index nên mỗi query duyệt cả bảng.
+- **Độ nặng:** chạy một mình, query mất p50 32.9 ms, p90 39.2 ms (30 lần, `results/calibration/20261119T051447Z-seed300000.json`), trong khoảng mục tiêu 20–50 ms. Ở 800000 review là p50 84.9 ms (`...051312Z-seed800000.json`), ngoài khoảng, nên chọn 300000.
 
 ### 2.3 Load và cách đo
 - **Tải đồng thời và chờ hết hạn:** Runner bắn đồng loạt 200 request chia đều qua hai instance (`app1` 100, `app2` 100) bằng các kết nối HTTP keep-alive mở sẵn (`undici.Pool`). Trước mỗi burst, runner làm đầy cache (`PTTL > 0`) rồi đợi key tự hết hạn qua `EXISTS == 0` (không gọi `DEL`).
@@ -43,10 +47,31 @@ Số liệu lấy từ `results/official/report_table.md` và được tính l�
 - **Cấu trúc lượt đo và điều kiện hợp lệ:** Thực nghiệm gồm 10 cặp xen kẽ (5 cặp `plain→coalesced` và 5 cặp `coalesced→plain`, xáo thứ tự bằng `ORDER_SEED=20261117`). Theo `CONTRACT.md` mục 8, một lượt chỉ `valid=true` khi đủ 200 response `200`, `payload_sha256` khớp baseline, xác nhận được expiry trước burst, `burst_span_ms ≤ 100 ms` và `Σ X-DB-Queries == queries_per_expiry` (lượt không hợp lệ được giữ nguyên log kèm `invalid_reasons` và chạy bù).
 - **Quy ước tổng hợp (`benchmark/src/aggregate.js`):** Tách riêng `median_of_run_p95_ms` (median `p95` của 10 lượt) và `median_of_pair_delta_p95_ms` (median của `delta_p95_ms = p95_coalesced − p95_plain` theo từng cặp; dấu âm nghĩa là `p95` giảm). Với tập số phần tử chẵn (10 cặp), median là trung bình cộng hai giá trị giữa; `median_query_ms` chỉ tính trên các request có thực thi query (`db_queries > 0`, loại trừ waiter và hit).
 
-## 3. Baseline và thay đổi
-- Baseline `plain`: cache-aside, không lock.
-- Thay đổi `coalesced`: lock theo key `SET NX PX`, recheck sau khi lấy lock, waiter poll 5 ms, timeout 2 s.
-- Giữ cố định: <!-- liệt kê -->
+## 3. Baseline, thay đổi và thiết kế lock
+Hai mode chạy trong cùng một service; runner chọn mode cho từng request bằng header `X-Cache-Mode`.
+
+### 3.1 Baseline `plain` (cache-aside)
+Đọc cache; `hit` thì trả ngay. Miss thì tự query Postgres, ghi cache với TTL 3000 ms rồi trả. Không có lock, nên mọi request thấy cache trống trước khi request đầu ghi xong đều tự query (cache stampede).
+
+### 3.2 Thay đổi `coalesced` (request coalescing bằng Redis lock)
+Chỉ nhánh cache miss khác baseline:
+1. Miss thì thử lấy lock: `SET lock:product:1 <token> NX PX 5000` (`NX`: chỉ đặt khi chưa có; `<token>`: chuỗi ngẫu nhiên riêng của request; `PX 5000`: lease 5000 ms).
+2. **Holder** (lấy được lock) đọc lại cache (recheck); nếu đã có thì nhả lock và trả `hit`. Nếu chưa, query, ghi cache, **rồi mới** nhả lock (để request đến sau thấy cache đã có) bằng script Lua compare-and-delete (chỉ xóa khi lock còn là của mình).
+3. **Waiter** đọc cache mỗi 5 ms (`miss-wait`); quá 2000 ms thì tự query (`miss-fallback`). Lỗi Redis ở bước đọc cache, lấy lock, recheck hoặc poll cũng đi theo nhánh fallback và được log.
+
+Ba tham số riêng: `LOCK_LEASE_MS` 5000, `WAIT_POLL_MS` 5, `WAIT_TIMEOUT_MS` 2000. Lease phải lớn hơn thời gian query của holder; ở lần đo chính thức query lâu nhất của holder là 79.2 ms (`results/official/*/requests.jsonl`). `SET NX PX` và Lua compare-and-delete khớp mẫu Redis khuyến nghị cho Redis 7.4 (mục 7).
+
+### 3.3 Giữ cố định
+Hai mode dùng cùng endpoint `GET /products/1`, body (runner so SHA-256), SQL, seed 300000, TTL 3000 ms, pool 10 connection mỗi instance, giới hạn CPU, 200 request mỗi burst (100/100 hai instance), client, image và commit `3682b13` (`CONTRACT.md` mục 3–6). Chỉ khác nhánh cache miss và ba tham số lock ở trên.
+
+### 3.4 Kiểm lock
+Năm tình huống chạy ngày 19/11/2026 trên máy chuẩn (`npm run test:lock`; bằng chứng `results/lock-tests/20261119T054509Z/case-N.json`, N là mục 10–14 của `docs/PILOT-CHECKLIST.md`):
+- **10, 11 (burst 200, cấu hình mặc định):** 1 query (delta `pg_stat_statements.calls` = tổng `X-DB-Queries`): 1 `miss-query`, 119 `miss-wait`, 80 `hit`. Có 1 holder đọc lại cache thấy đã có và không query (recheck). Đúng 1 holder ghi cache, `cache_set` trước `lock_released`.
+- **12 (`LOCK_LEASE_MS=10`, ngắn hơn query):** 3 query thay vì 1; cả 3 lần nhả lock trả `lock_not_owned`, Lua không xóa lock không phải của mình.
+- **13 (kill holder khi đang query):** lock của holder chết còn khi waiter hết timeout; 10 waiter đều `miss-fallback` sau 2000.5–2008.3 ms, mỗi waiter 1 query; lock hết lease thì request mới lấy được lock.
+- **14 (lock giả không bao giờ nhả, 50 request):** 50/50 `miss-fallback`, `lock_wait_ms` 2003.0–2010.5 ms.
+
+Mục 12–14 cố ý gây lỗi; lần đo chính thức có 0 `miss-fallback`. Kết quả cho thấy lock chạy đúng thiết kế ở cả năm tình huống; khi lỗi xảy ra, hậu quả quan sát được là query thừa hoặc chờ thêm, các request vẫn nhận được kết quả; riêng request của holder bị kill ở tình huống 13 mất kết nối.
 
 ## 4. Kết quả
 Đo 10 cặp xen kẽ (`ORDER_SEED=20261117`, 5 cặp `plain→coalesced` và 5 cặp `coalesced→plain`) tại commit `3682b13` trên máy chuẩn. **20/20 lượt hợp lệ** (`valid=true`, 0 lượt chạy bù, `Σ X-DB-Queries == delta calls` ở cả 20 lượt). Raw log và bảng tổng hợp: `results/official/report_table.md`, `results/official/summary.csv` và từng thư mục `results/official/<run_id>/`.
@@ -104,7 +129,10 @@ Khi dùng cần chỉnh và theo dõi ba điểm sau:
 - **Số dòng seed là giá trị ước lượng.** `seed_reviews_count` = 300000 trong official lấy từ `pg_class.reltuples`, vì commit `3682b13` chưa cấp quyền `SELECT` trên `reviews` cho `bench_ro`. Sau đó nhóm đếm lại bằng `count(*)` và được đúng 300000 (PR #21).
 
 ### 6.2 Giới hạn của lock
-<!-- Vượng -->
+- **Chỉ một node Redis, không phải Redlock.** Redis nêu: chấp nhận được khi thỉnh thoảng có race, vì replication bất đồng bộ nên failover có thể cho hai client cùng giữ lock, và TTL của Redis không dựa trên đồng hồ monotonic (mục 7). Chưa thử failover. Dữ liệu ở đây chỉ đọc nên hậu quả chỉ là thêm query (suy luận, chưa đo).
+- **Lease hết trước khi holder xong thì sinh query trùng** (tình huống 12: 3 query). Lease 5000 ms lớn hơn nhiều query lâu nhất của holder ở lần đo chính thức (79.2 ms), nên cấu hình chính thức không gặp.
+- **Holder chết thì waiter đợi hết `WAIT_TIMEOUT_MS`** rồi mỗi waiter tự query (tình huống 13: 10 waiter, 10 query). Chưa đo với 199 waiter.
+- **Chưa đo** tải Redis do waiter poll mỗi 5 ms.
 
 ## 7. Nguồn
 
