@@ -45,15 +45,15 @@ Hai dấu phải đúng khi viết report: `delta_p95_ms = p95_coalesced − p95
 ## 3. Nguyên nhân từ log
 
 **Plain.** Với 200 request cùng lúc, mỗi instance chỉ có `PG_POOL_MAX = 10` connection, nên 20 query chạy song song trên Postgres 2 CPU và phần còn lại xếp hàng chờ connection:
-- median `pool_wait_ms` = 1609 ms, median `query_ms` = 383 ms (so với khoảng 35 ms khi query chạy một mình trong lúc calibrate: query chậm hẳn đi vì tranh CPU);
+- median `pool_wait_ms` = 1609 ms, median `query_ms` = 383 ms (so với p50 32.9 ms khi query chạy một mình trong lúc calibrate, `results/calibration/20261119T051447Z-seed300000.json`: chậm khoảng 11,6 lần, phù hợp với việc tranh CPU);
 - ở request đứng vị trí p95, `pool_wait_ms` + `query_ms` chiếm khoảng 99% thời gian (median 3888 ms trên 3926 ms); phần còn lại median 41 ms.
 - Vì vậy p95 của plain là thời gian xếp hàng và chạy 200 query, không phải thời gian một query.
 
 **Coalesced.** Chỉ một request giữ lock và chạy query (1 `miss-query`), 199 request còn lại chờ (`miss-wait`) rồi đọc cache vừa ghi:
 - `pool_wait_ms` = 0, median `lock_wait_ms` = 43 ms, `query_ms` của request chạy query median 43 ms;
-- request ở vị trí p95 đều là `miss-wait`. Log chỉ giải thích khoảng 54 ms trong 139 ms (median); phần còn lại (median 65 ms, tới 149 ms) không nằm trong `pool_wait_ms`, `lock_wait_ms` hay `query_ms`. Đó là thời gian gửi, xếp hàng ở client hoặc event loop và đọc cache, không được log riêng. Report không nên gán phần này cho lock.
+- request ở vị trí p95 đều là `miss-wait`. Log chỉ giải thích khoảng 54 ms trong 139 ms (median); phần còn lại (median 65 ms, tới 149 ms) không nằm trong `pool_wait_ms`, `lock_wait_ms` hay `query_ms`. Nguồn của phần này chưa xác định vì app không log thời gian từ lúc vào handler đến lúc đọc cache, và client cũng không log riêng thời gian gửi. Report không nên gán phần này cho lock.
 
-**Plain không phải lúc nào cũng 200 query.** 4 trong 10 lượt plain có 115–165 query (cặp 1, 3, 7, 10) vì một số request đến muộn đã gặp cache do request đầu ghi xong (`hit_count` 35–85). Cả bốn lượt này có `burst_span_ms` lớn (60–93 ms), nhưng chưa đủ dữ liệu để kết luận quan hệ nhân quả (cặp 4 có span 57 ms mà không có hit). `queries_per_expiry` là đại lượng đo, không có ngưỡng đạt/trượt (contract mục 8). Report phải nêu spread 115–200, không chỉ "200".
+**Plain không phải lúc nào cũng 200 query.** 4 trong 10 lượt plain có 115–165 query (cặp 1, 3, 7, 10) vì một số request đã gặp cache do instance kia ghi xong (`hit_count` 35–85). Toàn bộ hit nằm ở một instance, miss đứng trước hit trong instance đó; hit xảy ra ở instance đọc cache chậm hơn. `server_recv_ts` của request hit đầu tiên (5,6 / 18,6 / 28,1 ms ở cặp 7 / 1 / 3) sớm hơn lúc cache được ghi sớm nhất (≥ 40,4 / 67,6 / 49,2 ms), nên `server_recv_ts` không phản ánh thời điểm đọc cache. Cả bốn lượt này có `burst_span_ms` lớn (60–93 ms), nhưng chưa đủ dữ liệu để kết luận quan hệ nhân quả (cặp 4 có span 57 ms mà không có hit). `queries_per_expiry` là đại lượng đo, không có ngưỡng đạt/trượt (contract mục 8). Report phải nêu spread 115–200, không chỉ "200".
 
 ## 4. Giới hạn cần nêu trong report
 
