@@ -12,7 +12,7 @@ Tài liệu kỹ thuật: [CONTRACT.md](CONTRACT.md). Báo cáo: [REPORT.md](REP
 
 ## Yêu cầu
 
-- Docker Desktop (Compose v2). Version dùng cho lần đo chính thức được ghi ở mục "Môi trường đo chính thức".
+- Docker Desktop (Compose 5.x; máy chuẩn dùng Compose v5.7.0). Version dùng cho lần đo chính thức được ghi ở mục "Môi trường đo chính thức".
 - Git. Không cần cài Node hay Postgres trên máy.
 
 ## Chạy từ fresh clone
@@ -28,6 +28,7 @@ Lệnh cuối tự dựng và chờ `postgres`, `redis`, `app1`, `app2` healthy,
 > **Lưu ý khi chạy lại hoặc đổi cấu hình:**
 > - **Đổi `SEED_REVIEWS` phải xóa volume DB trước:** Postgres chỉ chạy script seed (`db/init/`) khi khởi tạo volume mới. Nếu sửa `SEED_REVIEWS` trong `.env` (hoặc trên máy đã từng chạy version cũ), hãy chạy `docker compose down -v` trước khi chạy lại benchmark.
 > - **Chạy trong thư mục kết quả sạch:** Cuối mỗi lần chạy, `benchmark/src/aggregate.js` tổng hợp **mọi** `<run_id>/` hiện có trong `results/<RESULTS_KIND>/`. Trước khi chạy chính thức (`RESULTS_KIND=official`) hoặc khi đo lại từ đầu, hãy đảm bảo thư mục `results/<RESULTS_KIND>/` sạch (chỉ giữ `.gitkeep`) để không gộp trùng các lượt cùng số `pair`. Khi chạy kiểm chứng sau khi repo đã có `results/official/`, dùng mặc định `RESULTS_KIND=pilot`.
+> - **Máy đã từng chạy bản cũ cần build lại image:** `docker compose run` không tự dựng lại image đã có sẵn trên máy. Khi kéo commit mới về, chạy `docker compose build` (và `docker compose build benchmark` hoặc xóa image `c5-cache-stampede-*`) trước khi chạy lại.
 
 Chạy nhanh để kiểm môi trường (một cặp):
 
@@ -63,8 +64,8 @@ docker compose down -v
 
 ## Môi trường đo chính thức
 
-- **Máy chuẩn:** Máy Vượng — `AMD Ryzen 7 H 260 w/ Radeon 780M Graphics` (8 nhân / 16 luồng), RAM vật lý `31.3 GB` (WSL2 VM: 16 CPU, `15642 MB` ghi nhận trong `config.json`).
-- **OS & Docker:** Windows 11 Home `10.0.26200` + WSL2 (`linux 6.6.87.2-microsoft-standard-WSL2`, `x64`); Docker Desktop `29.9.3`, Docker Compose `v5.7.0`.
+- **Máy chuẩn:** Máy Vượng — `AMD Ryzen 7 H 260 w/ Radeon 780M Graphics` (host: 8 nhân / 16 luồng, RAM vật lý `31.3 GB` theo `docs/PILOT-CHECKLIST.md`; `config.json` của official run ghi nhận tài nguyên WSL2 VM: `cpu_count: 16`, `total_memory_mb: 15642`).
+- **OS & Docker:** Windows 11 Home `10.0.26200` + WSL2 (`linux 6.6.87.2-microsoft-standard-WSL2`, `x64`); Docker Engine `29.9.3` (Docker Desktop, WSL2), Docker Compose `v5.7.0`.
 - **Image pins (tag + digest):**
   - `postgres:16.16@sha256:3950ad7c3148ca2175ef1b6c36c9efbf78957ae8fbe8b3a5d7c35af50500382f`
   - `redis:7.4.12@sha256:2e3eb11462c4e3759e6972678dd051d150ff54b1e60714b3c33b701260172a90`

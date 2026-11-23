@@ -89,6 +89,9 @@ Log của Phúc cho phần việc của mình: xác nhận contract (Task 1) và
 - **Kiểm chứng**:
   - Chạy `node benchmark/src/aggregate.js results/official`: exit 0, đối chiếu khớp toàn bộ con số trong `REPORT.md` với `results/official/report_table.md` và `results/official/*/config.json`.
   - Kiểm `git diff --stat`: chỉ sửa 3 file `README.md`, `REPORT.md`, `ai/phuc/AI-LOG.md`.
+- **Sau review của Vỹ (PR #23 & review PR #24, 23/11):**
+  - Duyệt PR #24 (Task 7: `docs/SOURCES.md`) sau khi đối chiếu version và digest với `compose.yaml`, `Dockerfile` và `package-lock.json`.
+  - Sửa PR #23 theo 3 yêu cầu và 2 góp ý của `@tranquocvy`: đổi `Docker Desktop 29.9.3` thành `Docker Engine 29.9.3 (Docker Desktop, WSL2)`, đổi `Compose v2` ở dòng 15 `README.md` sang `Compose 5.x` kèm lưu ý `docker compose build` khi máy đã chạy bản cũ, ghi rõ nguồn thông số host (`docs/PILOT-CHECKLIST.md`) tách với `config.json` WSL2 VM, và chỉnh câu phần `65 ms` chưa xác định nguồn ở `REPORT.md` mục 4 cho nhất quán với PR #22.
 
 ## Lỗi assistant / vấn đề phát hiện trong quá trình làm
 
