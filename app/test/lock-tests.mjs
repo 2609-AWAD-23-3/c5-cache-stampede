@@ -51,7 +51,7 @@ async function case10and11() {
   });
 
   // #11: holder nào đã query thì cache_set phải xuất hiện trước lock_released.
-  // Holder gặp recheck_hit thì không query, không ghi cache, chỉ nhả lock (nhánh recheck của #10).
+  // Holder gặp recheck_hit thì không query, không ghi cache, chỉ nhả lock (nhánh recheck của checklist mục 10).
   const holders = logs.filter((l) => l.event === 'lock_acquired').map((l) => l.request_id);
   const order = holders.map((id) => {
     const ev = logs.filter((l) => l.request_id === id).map((l) => l.event);
